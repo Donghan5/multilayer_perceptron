@@ -69,6 +69,30 @@ class Network:
 			
 		return curr_activation
 
-	def backward(self, loss_gradient):
+	"""
+		nabla_w = delta weight
+		nabla_b = delta bias
+	"""
+	def backward(self, y_true):
+		nabla_w = [np.zeros(w.shape) for w in self.weights]
+		nabla_b = [np.zeros(b.shape) for b in self.biases]
 		
+		y_pred = self.activations[-1]
 		
+		if self.config.loss == "cross_entropy":
+			delta = y_pred - y_true
+		else:
+			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(self.zs[-1])
+		
+		# Save the gradient of output layer
+		nabla_w[-1] = np.dot(self.activations[-2].T, delta)
+		nabla_b[-1] = np.sum(delta, axis=0)
+
+		# Save the gradient of hidden layers and apply backpropagation (with chain rule)
+		for l in range(2, len(self.config.layers)):
+			z = self.zs[-l]
+			delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(z)
+			nabla_w[-l] = np.dot(self.activations[-l - 1].T, delta)
+			nabla_b[-l] = np.sum(delta, axis=0)
+		
+		return nabla_w, nabla_b
