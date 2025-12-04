@@ -1,22 +1,36 @@
 import numpy as np
 import pandas as pd
-from model import Mlp
+import pickle	# To save and load the model (in serialized form)
+from multilayer_perceptron import Mlp
 
 def predict(data_path, model_path):
-	data = pd.read_csv(data_path)
-
-	model = Mlp(
-		hiddden_layer_sizes=m_data['hidden_layer_sizes'],
-		output_layer_size=m_data['output_layer_size'],
-		activation=m_data['activation'],
-		output_activation=m_data['output_activation'],
-		loss=m_data['loss']
-	)
-
 	try:
-		x = pd.read_csv(data_path, header=None)
-	except:
-		print(f"{YELLOW}Error loading data: {e}{END}")
-		exit(1)
+		with open(model_path, 'rb') as f:
+			model = pickle.load(f)
+	except FileNotFoundError:
+		print(f"Model file not found: {model_path}")
+		return
 	
-	return model.network.forward(x)
+	try:
+		df = pd.read_csv(data_path, header=None)
+
+		X = df.values
+
+		# Standardize features
+		X = (X - X.mean(axis=0)) / X.std(axis=0)
+	except Exception as e:
+		print(f"Error loading or processing data: {e}")
+		return
+	
+	probabilities = model.model.forward(X)
+
+	predictions = np.argmax(probabilities, axis=1)
+
+	labels = ["B", "M"]
+	decoded_predictions = [labels[p] for p in predictions]
+
+	return decoded_predictions
+
+if __name__ == "__main__":
+	preds = predict("data.csv", "model.pkl")
+	print(preds)

@@ -1,6 +1,7 @@
 import numpy as np
 from optimizer import Sgd, Adam
 from network import Network, NetworkConfig
+from model import Model
 
 """
 	Implement MLP (Multi layer perceptron)
@@ -75,4 +76,25 @@ class Mlp:
 		self.model = Network(layers)
 
 	def fit(self, X, y):
-		self.model.fit(X, y, self.learning_rate, self.epochs, self.batch_size, self.solver)
+		input_size = X.shape[1]
+
+		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
+		config = NetworkConfig(
+			layers=layers,
+			activation=self.activation,
+			loss=self.loss
+		)
+		self.model = Model(config)
+
+		self.model.fit(
+			X, y,
+			self.learning_rate,
+			self.epochs,
+			self.batch_size,
+			self.optimization
+		)
+
+	def predict(self, X):
+		if self.model:
+			return self.model.network.forward(X)
+		return None

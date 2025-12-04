@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+"""
+	Standardize the dataframe except for the target column
+"""
 def standarize(dataframe: pd.DataFrame, target: str) -> None:
 	features = [x for x in dataframe.columns if x != target]
 	df_features = dataframe[features]
@@ -42,4 +45,16 @@ def relu_prime(x: np.matrix) -> np.matrix:
 	return (x > 0).astype(int)
 
 def softmax(x: np.ndarray) -> np.ndarray:
-	return (x_exps := np.exp(x)) / sum(x_exps)
+	x_exps = np.exp(x - np.max(x, axis=1, keepdims=True))
+	return x_exps / np.sum(x_exps, axis=1, keepdims=True)
+
+def mse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+	return np.mean(np.power(y_true - y_pred, 2))
+
+def mse_prime(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+	return 2 * (y_pred - y_true) / y_true.size
+
+def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+	# Clip y_pred to prevent log(0)
+	y_pred_clipped = np.clip(y_pred, 1e-15, 1 - 1e-15)
+	return -np.sum(y_true * np.log(y_pred_clipped)) / y_true.shape[0]

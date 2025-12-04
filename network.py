@@ -82,7 +82,7 @@ class Network:
 		if self.config.loss == "cross_entropy":
 			delta = y_pred - y_true
 		else:
-			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(self.zs[-1])
+			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(y_pred)
 		
 		# Save the gradient of output layer
 		nabla_w[-1] = np.dot(self.activations[-2].T, delta)
@@ -90,8 +90,9 @@ class Network:
 
 		# Save the gradient of hidden layers and apply backpropagation (with chain rule)
 		for l in range(2, len(self.config.layers)):
-			z = self.zs[-l]
-			delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(z)
+			current_activation = self.activations[-l]
+
+			delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(current_activation)
 			nabla_w[-l] = np.dot(self.activations[-l - 1].T, delta)
 			nabla_b[-l] = np.sum(delta, axis=0)
 		
