@@ -8,7 +8,7 @@ from model import Model
 	Implement MLP (Multi layer perceptron)
 """
 
-class Mlp:
+class MultilayerPerceptron:
 	def __init__(
 		self,
 		hidden_layer_sizes=[24, 24, 24],
@@ -38,7 +38,7 @@ class Mlp:
 
 		self.solver = solver
 
-	def fit(self, X, y):
+	def fit(self, X, y, X_val=None, y_val=None):
 		""" Fit the model to the data """
 		if hasattr(X, 'values'):
 			input_size = X.shape[1]
@@ -54,12 +54,14 @@ class Mlp:
 		)
 		self.model = Model(config)
 
-		self.model.fit(
+		return self.model.fit(
 			X, y,
 			self.learning_rate,
 			self.epochs,
 			self.batch_size,
-			self.solver
+			self.solver,
+			x_val=X_val,
+			y_val=y_val
 		)
 
 	def predict(self, X):

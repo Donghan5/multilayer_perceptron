@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pickle	# To save and load the model (in serialized form)
-from multilayer_perceptron import Mlp
+from multilayer_perceptron import MultilayerPerceptron
 
 def predict(data_path, model_path):
 	try:
