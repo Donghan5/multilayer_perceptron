@@ -2,13 +2,14 @@ import pandas as pd
 import numpy as np
 
 from dataclasses import dataclass
-from utils import standarize, sigmoid, sigmoid_prime, relu, relu_prime, softmax
+from utils import standarize, sigmoid, sigmoid_prime, relu, relu_prime, softmax, cross_entropy, cross_entropy_prime, mse, mse_prime
 
 @dataclass
 class NetworkConfig:
 	layers: list[int]
 	activation: str
 	loss: str
+	output_activation: str # [FIX] Added field
 
 class Network:
 	def __init__(self, config: NetworkConfig) -> None:
@@ -27,6 +28,7 @@ class Network:
 		"""
 			Decide activation function and loss function
 		"""
+		# Hidden layer activation
 		if self.config.activation == "sigmoid":
 			self.activation = sigmoid
 			self.activation_prime = sigmoid_prime
@@ -36,6 +38,7 @@ class Network:
 		else:
 			self.activation = self.config.activation
 			self.activation_prime = self.config.activation_prime
+		
 		if self.config.loss == "mse":
 			self.loss = mse
 			self.loss_prime = mse_prime
@@ -45,6 +48,15 @@ class Network:
 		else:
 			self.loss = self.config.loss
 			self.loss_prime = self.config.loss_prime
+		
+		if self.config.output_activation == "softmax":
+			self.output_activation = softmax
+		elif self.config.output_activation == "sigmoid":
+			self.output_activation = sigmoid
+		elif self.config.output_activation == "relu":
+			self.output_activation = relu
+		else:
+			self.output_activation = self.activation
 
 	def init_weights(self):
 		for i in range(len(self.config.layers) - 1):
@@ -61,11 +73,20 @@ class Network:
 		
 		curr_activation = x
 
-		for w, b in zip(self.weights, self.biases):
+		for i in range(len(self.weights) - 1):
+			w = self.weights[i]
+			b = self.biases[i]
 			z = np.dot(curr_activation, w) + b
 			self.zs.append(z)
 			curr_activation = self.activation(z)
 			self.activations.append(curr_activation)
+		
+		w = self.weights[-1]
+		b = self.biases[-1]
+		z = np.dot(curr_activation, w) + b
+		self.zs.append(z)
+		curr_activation = self.output_activation(z)
+		self.activations.append(curr_activation)
 			
 		return curr_activation
 
@@ -84,11 +105,9 @@ class Network:
 		else:
 			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(y_pred)
 		
-		# Save the gradient of output layer
 		nabla_w[-1] = np.dot(self.activations[-2].T, delta)
 		nabla_b[-1] = np.sum(delta, axis=0)
 
-		# Save the gradient of hidden layers and apply backpropagation (with chain rule)
 		for l in range(2, len(self.config.layers)):
 			current_activation = self.activations[-l]
 

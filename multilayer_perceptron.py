@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from optimizer import Sgd, Adam
 from network import Network, NetworkConfig
 from model import Model
@@ -35,54 +36,21 @@ class Mlp:
 
 		self.model = None
 
-		match(solver):
-			case "sgd":
-				self.optimizer = Sgd(self.learning_rate)
-			case "adam":
-				self.optimizer = Adam(self.learning_rate)
-			case _:
-				raise ValueError(f"Unknown solver: {solver}")
-		self._init_model()
-
-	def _init_model(self):
-		layers = []
-		for i in range(len(self.hidden_layer_sizes)):
-			if i == 0:
-				layers.append(
-					Dense(
-						self.hidden_layer_sizes[i],
-						activation=self.activation,
-						weight_init=self.weight_init,
-						random_seed=self.random_seed,
-					)
-				)
-			else:
-				layers.append(
-					Dense(
-						self.hidden_layer_sizes[i],
-						activation=self.activation,
-						weight_init=self.weight_init,
-						random_seed=self.random_seed,
-					)
-				)
-		layers.append(
-			Dense(
-				self.output_layer_size,
-				activation=self.output_activation,
-				weight_init=self.weight_init,
-				random_seed=self.random_seed,
-			)
-		)
-		self.model = Network(layers)
+		self.solver = solver
 
 	def fit(self, X, y):
-		input_size = X.shape[1]
-
+		""" Fit the model to the data """
+		if hasattr(X, 'values'):
+			input_size = X.shape[1]
+		else:
+			input_size = X.shape[1]
+		
 		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
 		config = NetworkConfig(
 			layers=layers,
 			activation=self.activation,
-			loss=self.loss
+			loss=self.loss,
+			output_activation=self.output_activation
 		)
 		self.model = Model(config)
 
@@ -91,10 +59,16 @@ class Mlp:
 			self.learning_rate,
 			self.epochs,
 			self.batch_size,
-			self.optimization
+			self.solver
 		)
 
 	def predict(self, X):
 		if self.model:
 			return self.model.network.forward(X)
 		return None
+	
+	def save(self, filename):
+		""" Save the model to a file """
+		with open(filename, 'wb') as f:
+			pickle.dump(self, f)
+		print(f"Model saved to {filename}")

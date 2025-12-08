@@ -55,6 +55,21 @@ def mse_prime(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
 	return 2 * (y_pred - y_true) / y_true.size
 
 def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-	# Clip y_pred to prevent log(0)
-	y_pred_clipped = np.clip(y_pred, 1e-15, 1 - 1e-15)
+	"""
+	Compute the cross entropy loss
+	y_true: true labels (one-hot encoded)
+	y_pred: predicted probabilities
+	"""
+	epsilon = 1e-15
+	y_pred_clipped = np.clip(y_pred, epsilon, 1 - epsilon)
 	return -np.sum(y_true * np.log(y_pred_clipped)) / y_true.shape[0]
+
+def cross_entropy_prime(y_true, y_pred):
+	"""
+	Compute the derivative of cross entropy loss
+	y_true: true labels (one-hot encoded)
+	y_pred: predicted probabilities
+	"""
+	epsilon = 1e-15
+	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+	return - (y_true / y_pred) + ((1 - y_true) / (1 - y_pred))

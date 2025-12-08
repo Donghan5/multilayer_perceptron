@@ -14,7 +14,7 @@ def predict(data_path, model_path):
 	try:
 		df = pd.read_csv(data_path, header=None)
 
-		X = df.values
+		X = df.iloc[:, 2:].values
 
 		# Standardize features
 		X = (X - X.mean(axis=0)) / X.std(axis=0)
@@ -22,7 +22,7 @@ def predict(data_path, model_path):
 		print(f"Error loading or processing data: {e}")
 		return
 	
-	probabilities = model.model.forward(X)
+	probabilities = model.predict(X)
 
 	predictions = np.argmax(probabilities, axis=1)
 
