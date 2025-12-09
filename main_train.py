@@ -8,10 +8,11 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Train the MLP model.")
 	parser.add_argument("--data", type=str, default="data.csv", help="Path to the training data CSV file.")
 	parser.add_argument("--layers", type=int, nargs='+', default=[24, 24, 24], help="Sizes of hidden layers.")
-	parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs.")
-	parser.add_argument("--batch_size", type=int, default=8, help="Batch size for training.")
-	parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for the optimizer.")
+	parser.add_argument("--epochs", type=int, default=200, help="Number of training epochs.")
+	parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
+	parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for the optimizer.")
 	parser.add_argument("--split", type=float, default=0.2, help="Train/validation split ratio.")
+	parser.add_argument("--solver", type=str, default="adam", help="Select optimizer adam or sgd")
 	return parser.parse_args()
 
 
@@ -87,7 +88,7 @@ def main():
 		learning_rate=args.learning_rate,
 		epochs=args.epochs,
 		batch_size=args.batch_size,
-		solver="adam",
+		solver=args.solver,
 		output_activation="softmax",
 		loss="cross_entropy"
 	)

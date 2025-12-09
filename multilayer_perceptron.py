@@ -45,6 +45,8 @@ class MultilayerPerceptron:
 		else:
 			input_size = X.shape[1]
 		
+		early_stopping_rounds = 10
+		
 		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
 		config = NetworkConfig(
 			layers=layers,
@@ -61,7 +63,8 @@ class MultilayerPerceptron:
 			self.batch_size,
 			self.solver,
 			x_val=X_val,
-			y_val=y_val
+			y_val=y_val,
+			early_stopping_rounds=early_stopping_rounds
 		)
 
 	def predict(self, X):

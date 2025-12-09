@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import pandas as pd
 from network import Network, NetworkConfig
 from optimizer import Sgd, Adam
@@ -8,7 +9,7 @@ class Model:
 		self.config = config
 		self.network = Network(config)
 	
-	def fit(self, x_train, y_train, learning_rate, epochs, batch_size, optimization="sgd", x_val=None, y_val=None):
+	def fit(self, x_train, y_train, learning_rate, epochs, batch_size, optimization="sgd", x_val=None, y_val=None, early_stopping_rounds=10):
 		"""
 		:param self: Class itself
 		:param x_train: Training input data
@@ -19,6 +20,7 @@ class Model:
 		:param optimization: Optimization algorithm to use (e.g., "sgd" or "adam")
 		:param x_val: Validation input data
 		:param y_val: Validation target data
+		:param early_stopping_rounds: Number of epochs with no improvement to stop training
 		"""
 		if optimization == "adam":
 			optimizer = Adam(learning_rate)
@@ -27,6 +29,12 @@ class Model:
 		
 		n_samples = len(x_train)
 		history = {'loss':[], 'val_loss':[], 'accuracy':[], 'val_accuracy':[]}
+
+		# variable init to early stopping
+		best_loss = float('inf')
+		patience = 0
+		best_weights = None
+		best_biases = None
 
 		for epoch in range(epochs):
 			indices = np.arange(n_samples)
@@ -71,6 +79,20 @@ class Model:
 				history['val_loss'].append(val_loss)
 				history['val_accuracy'].append(val_accuracy)
 				log_msg += f" - val_loss: {val_loss:.4f} - val_accuracy: {val_accuracy:.4f}"
+			
+			if val_loss < best_loss:
+				best_loss = val_loss
+				patience = 0
+				best_weights = copy.deepcopy(self.network.weights)
+				best_biases = copy.deepcopy(self.network.biases)
+			else:
+				patience += 1
+				if patience >= early_stopping_rounds:
+					print(f"\nEarly stopping at epoch {epoch + 1}")
+					print(f"Restoring best weights from epoch {epoch + 1 - patience} (Loss: {best_loss:.4f})")
+					self.network.weights = best_weights
+					self.network.biases = best_biases
+					break
 			print(log_msg)
 
 		return history
