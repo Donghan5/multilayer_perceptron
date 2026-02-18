@@ -57,12 +57,8 @@ class Model:
 
 			train_output = self.network.forward(x_train)
 			train_loss = self.network.loss(y_train, train_output)
-			if self.config.output_activation == self.network.activation:
-				train_preds = np.argmax(train_output, axis=1)
-				train_true = np.argmax(y_train, axis=1)
-			else:
-				train_preds = np.argmax(train_output, axis=1)
-				train_true = np.argmax(y_train, axis=1)
+			train_preds = np.argmax(train_output, axis=1)
+			train_true = np.argmax(y_train, axis=1)
 			train_accuracy = np.mean(train_preds == train_true)
 
 			history['loss'].append(train_loss)
@@ -80,19 +76,19 @@ class Model:
 				history['val_accuracy'].append(val_accuracy)
 				log_msg += f" - val_loss: {val_loss:.4f} - val_accuracy: {val_accuracy:.4f}"
 			
-			if val_loss < best_loss:
-				best_loss = val_loss
-				patience = 0
-				best_weights = copy.deepcopy(self.network.weights)
-				best_biases = copy.deepcopy(self.network.biases)
-			else:
-				patience += 1
-				if patience >= early_stopping_rounds:
-					print(f"\nEarly stopping at epoch {epoch + 1}")
-					print(f"Restoring best weights from epoch {epoch + 1 - patience} (Loss: {best_loss:.4f})")
-					self.network.weights = best_weights
-					self.network.biases = best_biases
-					break
+				if val_loss < best_loss:
+					best_loss = val_loss
+					patience = 0
+					best_weights = copy.deepcopy(self.network.weights)
+					best_biases = copy.deepcopy(self.network.biases)
+				else:
+					patience += 1
+					if patience >= early_stopping_rounds:
+						print(f"\nEarly stopping at epoch {epoch + 1}")
+						print(f"Restoring best weights from epoch {epoch + 1 - patience} (Loss: {best_loss:.4f})")
+						self.network.weights = best_weights
+						self.network.biases = best_biases
+						break
 			print(log_msg)
 
 		return history

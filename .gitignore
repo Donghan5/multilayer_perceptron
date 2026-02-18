@@ -2,3 +2,4 @@ venv
 __pycache__
 model.pkl
 learning_curve.png
+*.Identity

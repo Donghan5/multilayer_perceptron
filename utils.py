@@ -4,7 +4,7 @@ import pandas as pd
 """
 	Standardize the dataframe except for the target column
 """
-def standarize(dataframe: pd.DataFrame, target: str) -> None:
+def standardize(dataframe: pd.DataFrame, target: str) -> None:
 	features = [x for x in dataframe.columns if x != target]
 	df_features = dataframe[features]
 	dataframe[features] = (df_features - df_features.mean()) / df_features.std()
@@ -15,19 +15,15 @@ def standarize(dataframe: pd.DataFrame, target: str) -> None:
 		- Using the formula: 1 / (1 + e^(-x))
 		- Avoiding overflow by using the property of e^x = 1 / e^(-x), so multiplying by e^x
 """
-def sigmoid(x: np.matrix) -> np.matrix:
-	result = np.zeros((x.shape[0], x.shape[1]))
-	for i in range(x.shape[1]):
-		if x[0, i] >= 0:
-			result[0, i] = 1 / (1 + np.exp(-x[0, i]))
-		else:
-			result[0, i] = np.exp(x[0, i]) / (1 + np.exp(x[0, i]))
-	return result
+def sigmoid(x):
+    return np.where(x >= 0,
+                    1 / (1 + np.exp(-x)),
+                    np.exp(x) / (1 + np.exp(x)))
 
 """
 	Derivative of sigmoid function
 """
-def sigmoid_prime(x: np.matrix) -> np.matrix:
+def sigmoid_prime(x):
 	return np.multiply(x, (1 - x))
 
 """
@@ -35,7 +31,7 @@ def sigmoid_prime(x: np.matrix) -> np.matrix:
 		- If the input value is a positive number, return it
 		- Else, the case of 0 or negative number, return 0
 """
-def relu(x: np.matrix) -> np.matrix:
+def relu(x):
 	return np.maximum(0, x)
 
 """

@@ -13,10 +13,9 @@ class Sgd:
 		SGD update
 		W = W - learning_rate * gradient
 	"""	
-	def update(self, weights, biases, nabla_w, nabla_b):
+	def update(self, network, nabla_w, nabla_b):
 		network.weights = [w - self.learning_rate * nw for w, nw in zip(network.weights, nabla_w)]
 		network.biases = [b - self.learning_rate * nb for b, nb in zip(network.biases, nabla_b)]
-
 
 """
 	ADAM: adapted moment estimation, combines advantages of Momentum and RMSprop techniques
