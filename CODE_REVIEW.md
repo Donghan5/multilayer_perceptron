@@ -17,46 +17,29 @@
 
 ## 1. 버그 및 에러
 
-### [Critical] `network.py:5` — Import 오타 (`standarize`)
+### ~~[Critical] `network.py:5` — Import 오타 (`standarize`)~~ ✅ 수정 완료
 
-```python
-# network.py:5
-from utils import standarize, sigmoid, ...
-```
-
-`utils.py`에는 `standardize`로 정의되어 있으나, import 시 `standarize`(d 누락)로 참조합니다.  
-**현재 이 코드는 import 시점에서 `ImportError`가 발생합니다.**
-
-**수정:**
-```python
-from utils import standardize, sigmoid, ...
-```
+`standarize` → `standardize` 로 수정 완료.
 
 ---
 
-### [Critical] `backward`에서 activation_prime 입력값 혼동
+### ~~[Critical] `backward`에서 activation_prime 입력값 혼동~~ ✅ 수정 완료
 
-`network.py:106` (출력층):
+`network.py:114` (은닉층) — **수정 전:**
 ```python
-delta = self.loss_prime(y_true, y_pred) * self.activation_prime(y_pred)
-```
-
-`network.py:114` (은닉층):
-```python
+current_activation = self.activations[-l]
 delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(current_activation)
 ```
 
-- `sigmoid_prime`은 activated value(`a`)를 받도록 구현되어 있어 현재 동작하지만, `relu_prime`은 본래 pre-activation 값(`z`)을 받아야 합니다.
-- ReLU의 경우 `a > 0`과 `z > 0`이 동치이므로 우연히 동작하지만, **의도가 불분명**하고 Leaky ReLU 등으로 확장 시 즉시 깨집니다.
-- 출력층 backward에서 비-cross_entropy 케이스에 `self.activation_prime`을 쓰는데, 출력층은 `output_activation`의 derivative를 사용해야 합니다.
-
-**수정:** `self.zs`에 저장된 pre-activation 값을 사용하도록 변경하고, activation_prime 함수들도 `z`를 받도록 통일합니다.
-
+**수정 후:**
 ```python
-# 은닉층 backprop
 z = self.zs[-l]
 delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(z)
 ```
+
+- `relu_prime`은 pre-activation 값(`z`)을 받아야 하므로 `self.activations[-l]`(a) → `self.zs[-l]`(z)로 변경
+- `sigmoid_prime`은 `a * (1 - a)` 공식이라 기존 동작에 영향 없음
+- 잔여 이슈: 출력층(`network.py:106`) 비-cross_entropy 케이스는 `output_activation`의 derivative를 사용해야 하나 미수정
 
 ---
 
@@ -241,10 +224,10 @@ def sigmoid(x):
 | 함수 | 현재 상태 |
 |------|-----------|
 | `sigmoid(x)` | type hint 없음 |
-| `relu_prime(x: np.matrix)` | deprecated type `np.matrix` 사용 |
+| `relu_prime(x: np.ndarray)` | ✅ `np.matrix` → `np.ndarray` 수정 완료 |
 | `softmax(x: np.ndarray)` | 올바름 |
 
-- `np.matrix`는 deprecated입니다. `np.ndarray`로 통일하세요.
+- ~~`np.matrix`는 deprecated입니다. `np.ndarray`로 통일하세요.~~ ✅ 수정 완료
 - 모든 public 함수에 type hint를 일관되게 적용하세요.
 
 ---
@@ -276,12 +259,12 @@ def sigmoid(x):
 
 | 순위 | 항목 | 위치 | 심각도 |
 |------|------|------|--------|
-| 1 | Import 오타 (`standarize` → `standardize`) | `network.py:5` | Critical |
+| 1 | ~~Import 오타 (`standarize` → `standardize`)~~ ✅ | `network.py:5` 수정 완료 | Critical |
 | 2 | 추론 시 정규화 mean/std 불일치 | `predict.py:30` | Critical |
 | 3 | Gradient를 batch_size로 정규화 | `network.py:108-109` | Critical |
 | 4 | He/Xavier weight initialization 실제 구현 | `network.py:61-68` | Important |
-| 5 | backward에서 z vs a 일관성 확보 | `network.py:106,114` | Important |
+| 5 | ~~backward에서 z vs a 일관성 확보~~ ✅ | `network.py:114` 수정 완료 (`106` 출력층 잔여) | Important |
 | 6 | cross_entropy 호출 오류 | `predict.py:39` | Important |
 | 7 | 불필요한 3단 클래스 구조 단순화 | 전체 구조 | Improvement |
-| 8 | Docstring 위치, type hint 일관성 | `utils.py`, 전체 | Style |
+| 8 | Docstring 위치, type hint 일관성 (`relu_prime` ✅) | `utils.py`, 전체 | Style |
 | 9 | 오타 수정 (`timestap` → `timestep`) | `optimizer.py:33` | Low |

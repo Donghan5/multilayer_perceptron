@@ -37,7 +37,7 @@ def relu(x):
 """
 	Derivative of ReLU activation function
 """
-def relu_prime(x: np.matrix) -> np.matrix:
+def relu_prime(x: np.ndarray) -> np.ndarray:
 	return (x > 0).astype(int)
 
 def softmax(x: np.ndarray) -> np.ndarray:
@@ -69,3 +69,12 @@ def cross_entropy_prime(y_true, y_pred):
 	epsilon = 1e-15
 	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
 	return - (y_true / y_pred) + ((1 - y_true) / (1 - y_pred))
+
+def one_hot_encode(y):
+	encoded = np.zeros((len(y), 2))
+	for i, label in enumerate(y):
+		if label == 'M':
+			encoded[i] = [0, 1]
+		else:
+			encoded[i] = [1, 0]
+	return encoded

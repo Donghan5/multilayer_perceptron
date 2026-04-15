@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
-from multilayer_perceptron import MultilayerPerceptron
+from utils import one_hot_encode
+
 
 def get_args():
 	parser = argparse.ArgumentParser(description="Train the MLP model.")
@@ -16,14 +17,7 @@ def get_args():
 	return parser.parse_args()
 
 
-def one_hot_encode(y):
-	encoded = np.zeros((len(y), 2))
-	for i, label in enumerate(y):
-		if label == 'M':
-			encoded[i] = [0, 1]
-		else:
-			encoded[i] = [1, 0]
-	return encoded
+
 
 def plot_learning_curve(history):
 	epochs = range(1, len(history['loss']) + 1)

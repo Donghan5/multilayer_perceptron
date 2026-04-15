@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 
 from dataclasses import dataclass
-from utils import standarize, sigmoid, sigmoid_prime, relu, relu_prime, softmax, cross_entropy, cross_entropy_prime, mse, mse_prime
+from utils import standardize, sigmoid, sigmoid_prime, relu, relu_prime, softmax, cross_entropy, cross_entropy_prime, mse, mse_prime
 
 @dataclass
 class NetworkConfig:
 	layers: list[int]
 	activation: str
 	loss: str
-	output_activation: str # [FIX] Added field
+	output_activation: str
 
 class Network:
 	def __init__(self, config: NetworkConfig) -> None:
@@ -109,9 +109,9 @@ class Network:
 		nabla_b[-1] = np.sum(delta, axis=0)
 
 		for l in range(2, len(self.config.layers)):
-			current_activation = self.activations[-l]
+			z = self.zs[-l]
 
-			delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(current_activation)
+			delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(z)
 			nabla_w[-l] = np.dot(self.activations[-l - 1].T, delta)
 			nabla_b[-l] = np.sum(delta, axis=0)
 		

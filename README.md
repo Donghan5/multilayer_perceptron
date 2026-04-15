@@ -1,79 +1,97 @@
-# Multilayer Perceptron (MLP) Project
+# Multilayer Perceptron (MLP) from Scratch
 
-This project implements a Multilayer Perceptron (MLP) from scratch using Python and NumPy. It is designed to classify data, specifically tailored for the Breast Cancer Wisconsin (Diagnostic) Data Set, distinguishing between Malignant (M) and Benign (B) tumors.
+A neural network implemented entirely from scratch using only NumPy (no TensorFlow/PyTorch). Built to classify breast tumors as **Malignant (M)** or **Benign (B)** using the Wisconsin Breast Cancer Dataset.
 
-## Basics of Multilayer Perceptron (MLP)
+## Architecture
 
-A Multilayer Perceptron (MLP) is a class of feedforward artificial neural networks (ANN). An MLP consists of at least three layers of nodes: an input layer, a hidden layer, and an output layer. Except for the input nodes, each node is a neuron that uses a nonlinear activation function. MLP utilizes a supervised learning technique called backpropagation for training.
+The codebase follows a clean layered design:
 
-### Key Concepts:
-- **Input Layer**: Receives the initial data.
-- **Hidden Layers**: Intermediate layers where the computation and feature extraction happen. Deep learning models have multiple hidden layers.
-- **Output Layer**: Produces the final prediction or classification.
-- **Weights and Biases**: Parameters that the model learns during training.
-- **Activation Function**: Introduces non-linearity to the model (e.g., Sigmoid, ReLU, Softmax).
-- **Forward Propagation**: The process of passing the input through the network to generate an output.
-- **Backpropagation**: The algorithm used to calculate the gradient of the loss function with respect to the weights, allowing the model to learn by updating weights to minimize error.
+| File | Role |
+|---|---|
+| `multilayer_perceptron.py` | High-level API — configures and wraps the model |
+| `model.py` | Training loop — epoch iteration, mini-batch SGD, early stopping |
+| `network.py` | Core neural network — forward propagation & backpropagation |
+| `optimizer.py` | SGD and Adam optimizers |
+| `utils.py` | Math primitives — sigmoid, ReLU, softmax, cross-entropy, MSE |
+| `main_train.py` | CLI entry point for training |
+| `predict.py` | CLI entry point for inference |
+| `split.py` | Dataset splitting utility |
 
-## Project Structure
+## How It Works
 
-- `multilayer_perceptron.py`: Main class interface for the MLP.
-- `model.py`: Handles the training loop and model management.
-- `network.py`: Defines the neural network structure, forward/backward propagation.
-- `optimizer.py`: Implements optimization algorithms (SGD, Adam).
-- `utils.py`: Contains utility functions (activation functions, loss functions).
-- `main_train.py`: Script to train the model.
-- `predict.py`: Script to load a trained model and make predictions.
-- `data.csv`: Dataset file (must be present for training).
+1. **Data loading** (`main_train.py`): Reads `data.csv`, extracts 30 numeric features (columns 2+), one-hot encodes the label (`M` -> `[0,1]`, `B` -> `[1,0]`), and standardizes features (z-score normalization).
+
+2. **Network construction** (`network.py`): Builds a fully-connected network with configurable hidden layers (default: 3 layers of 24 neurons). Weights are initialized with small random values (`* 0.1`).
+
+3. **Forward pass**: Input flows through hidden layers with a configurable activation (ReLU or sigmoid), and the output layer uses **softmax** for 2-class probability output.
+
+4. **Backward pass (backpropagation)**: Computes gradients via the chain rule. For cross-entropy + softmax, it uses the simplified gradient `y_pred - y_true`.
+
+5. **Optimization** (`optimizer.py`): Supports **SGD** (vanilla gradient descent) and **Adam** (adaptive moment estimation with bias correction).
+
+6. **Training** (`model.py`): Mini-batch training with shuffling, tracks loss/accuracy for both train and validation sets, and implements **early stopping** (restores best weights after patience runs out).
+
+7. **Output**: Saves the trained model as `model.pkl` (via pickle) and generates a `learning_curve.png` plot showing loss and accuracy curves.
+
+## Default Configuration
+
+- Hidden layers: `[24, 24, 24]`
+- Output: 2 neurons (binary classification via softmax)
+- Loss: Cross-entropy
+- Optimizer: Adam (lr=0.0001)
+- Batch size: 4, Epochs: 200
+- Early stopping patience: 10 epochs
 
 ## Installation
 
-1. **Clone the repository** (if applicable).
-2. **Set up the Virtual Environment**:
-   Run the provided script to create a virtual environment and install dependencies.
+1. Set up the virtual environment:
    ```bash
    ./start_venv.sh
    source venv/bin/activate
    ```
-   Alternatively, you can manually install the requirements:
+   Or install dependencies manually:
    ```bash
    pip install -r requirements.txt
    ```
+
+## Dependencies
+
+- `numpy` >= 1.21.0
+- `matplotlib` >= 3.5.1
+- `pandas` >= 1.3.0
 
 ## Usage
 
 ### Training
 
-To train the model, use `main_train.py`. You can inspect the available arguments using `--help`.
-
 ```bash
 python main_train.py --help
 ```
 
-**Example command:**
+Example:
 ```bash
 python main_train.py --data data.csv --layers 24 24 24 --epochs 200 --batch_size 4 --learning_rate 0.0001 --split 0.2 --solver adam
 ```
 
-- `--data`: Path to the training data CSV file (default: `data.csv`).
-- `--layers`: Sizes of hidden layers (default: `24 24 24`).
-- `--epochs`: Number of training epochs (default: `200`).
-- `--batch_size`: Batch size for training (default: `4`).
-- `--learning_rate`: Learning rate (default: `0.0001`).
-- `--split`: Train/validation split ratio (default: `0.2`).
-- `--solver`: Select optimizer adam or sgd (default: `adam`).
+| Argument | Description | Default |
+|---|---|---|
+| `--data` | Path to the training data CSV file | `data.csv` |
+| `--layers` | Sizes of hidden layers | `24 24 24` |
+| `--epochs` | Number of training epochs | `200` |
+| `--batch_size` | Batch size for training | `4` |
+| `--learning_rate` | Learning rate | `0.0001` |
+| `--split` | Train/validation split ratio | `0.2` |
+| `--solver` | Optimizer (`adam` or `sgd`) | `adam` |
 
-The training script will save the trained model to `model.pkl` and generate a learning curve plot `learning_curve.png`.
+The training script saves the trained model to `model.pkl` and generates a `learning_curve.png` plot.
 
 ### Prediction
-
-To make predictions using a trained model, use `predict.py`.
 
 ```bash
 python predict.py --data data.csv --model model.pkl
 ```
 
-- `--data`: Path to the input data CSV file for prediction (default: `data.csv`).
-- `--model`: Path to the trained model file (default: `model.pkl`).
-
-This will output the predicted labels (e.g., `['M', 'B', ...]`).
+| Argument | Description | Default |
+|---|---|---|
+| `--data` | Path to the input data CSV file | `data.csv` |
+| `--model` | Path to the trained model file | `model.pkl` |
