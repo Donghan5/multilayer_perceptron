@@ -6,11 +6,36 @@ from optimizer import Sgd, Adam
 import pickle
 
 class Model:
-	def __init__(self, config: NetworkConfig) -> None:
-		self.config = config
-		self.network = Network(config)
+	def __init__(
+		self,
+		hidden_layer_sizes=[24, 24, 24],
+		output_layer_size=2,
+		activation="relu",
+		output_activation="softmax",
+		loss="cross_entropy",
+		learning_rate=0.0314,
+		epochs=100,
+		batch_size=8,
+		weight_init="HeUniform",
+		random_seed=None,
+		solver="sgd",
+	):
+		self.hidden_layer_sizes = hidden_layer_sizes
+		self.output_layer_size = output_layer_size
+		self.activation = activation
+		self.output_activation = output_activation
+		self.loss = loss
+		self.learning_rate = learning_rate
+		self.epochs = epochs
+		self.batch_size = batch_size
+		self.weight_init = weight_init
+		self.random_seed = random_seed
+
+		self.network = None
+
+		self.solver = solver
 	
-	def fit(self, x_train, y_train, learning_rate, epochs, batch_size, optimization="sgd", x_val=None, y_val=None, early_stopping_rounds=10):
+	def fit(self, x_train, y_train, x_val=None, y_val=None):
 		"""
 		:param self: Class itself
 		:param x_train: Training input data
@@ -23,21 +48,45 @@ class Model:
 		:param y_val: Validation target data
 		:param early_stopping_rounds: Number of epochs with no improvement to stop training
 		"""
-		if optimization == "adam":
-			optimizer = Adam(learning_rate)
-		else:
-			optimizer = Sgd(learning_rate)
-		
-		n_samples = len(x_train)
 		history = {'loss':[], 'val_loss':[], 'accuracy':[], 'val_accuracy':[]}
 
+		if self.solver == "adam":
+			optimizer = Adam(self.learning_rate)
+		else:
+			optimizer = Sgd(self.learning_rate)
+	
+		n_samples = len(x_train)
+
+		if hasattr(x_train, 'values'):
+			input_size = x_train.shape[1]
+		else:
+			input_size = x_train.shape[1]
+		
+		early_stopping_rounds = 10
+		
+		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
+		config = NetworkConfig(
+			layers=layers,
+			activation=self.activation,
+			loss=self.loss,
+			output_activation=self.output_activation
+		)
+		self.network = Network(config)
+
+		self.mean_train = x_train.mean(axis=0)
+		self.std_train = x_train.std(axis=0) + 1e-08
+
+		x_train = (x_train - self.mean_train) / self.std_train
+		if x_val is not None:
+			x_val = (x_val - self.mean_train) / self.std_train
+		
 		# variable init to early stopping
 		best_loss = float('inf')
 		patience = 0
 		best_weights = None
 		best_biases = None
 
-		for epoch in range(epochs):
+		for epoch in range(self.epochs):
 			indices = np.arange(n_samples)
 			np.random.shuffle(indices)
 
@@ -48,9 +97,9 @@ class Model:
 				x_shuffled = x_train[indices]
 				y_shuffled = y_train[indices]
 			
-			for i in range(0, n_samples, batch_size):
-				x_batch = x_shuffled[i : i + batch_size]
-				y_batch = y_shuffled[i : i + batch_size]
+			for i in range(0, n_samples, self.batch_size):
+				x_batch = x_shuffled[i : i + self.batch_size]
+				y_batch = y_shuffled[i : i + self.batch_size]
 
 				self.network.forward(x_batch)
 				nabla_w, nabla_b = self.network.backward(y_batch)
@@ -65,7 +114,7 @@ class Model:
 			history['loss'].append(train_loss)
 			history['accuracy'].append(train_accuracy)
 
-			log_msg = f"Epoch {epoch + 1}/{epochs} - loss: {train_loss:.4f} - accuracy: {train_accuracy:.4f}"
+			log_msg = f"Epoch {epoch + 1}/{self.epochs} - loss: {train_loss:.4f} - accuracy: {train_accuracy:.4f}"
 			if x_val is not None and y_val is not None:
 				val_output = self.network.forward(x_val)
 				val_loss = self.network.loss(y_val, val_output)
@@ -94,68 +143,9 @@ class Model:
 
 		return history
 
-class MultilayerPerceptron:
-	def __init__(
-		self,
-		hidden_layer_sizes=[24, 24, 24],
-		output_layer_size=2,
-		activation="relu",
-		output_activation="softmax",
-		loss="cross_entropy",
-		learning_rate=0.0314,
-		epochs=100,
-		batch_size=8,
-		weight_init="HeUniform",
-		random_seed=None,
-		solver="sgd",
-	):
-		self.hidden_layer_sizes = hidden_layer_sizes
-		self.output_layer_size = output_layer_size
-		self.activation = activation
-		self.output_activation = output_activation
-		self.loss = loss
-		self.learning_rate = learning_rate
-		self.epochs = epochs
-		self.batch_size = batch_size
-		self.weight_init = weight_init
-		self.random_seed = random_seed
-
-		self.model = None
-
-		self.solver = solver
-
-	def fit(self, X, y, X_val=None, y_val=None):
-		""" Fit the model to the data """
-		if hasattr(X, 'values'):
-			input_size = X.shape[1]
-		else:
-			input_size = X.shape[1]
-		
-		early_stopping_rounds = 10
-		
-		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
-		config = NetworkConfig(
-			layers=layers,
-			activation=self.activation,
-			loss=self.loss,
-			output_activation=self.output_activation
-		)
-		self.model = Model(config)
-
-		return self.model.fit(
-			X, y,
-			self.learning_rate,
-			self.epochs,
-			self.batch_size,
-			self.solver,
-			x_val=X_val,
-			y_val=y_val,
-			early_stopping_rounds=early_stopping_rounds
-		)
-
 	def predict(self, X):
-		if self.model:
-			return self.model.network.forward(X)
+		if self.network:
+			return self.network.forward(X)
 		return None
 	
 	def save(self, filename):

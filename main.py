@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
+import model
 from utils import one_hot_encode
 
 
@@ -60,24 +61,24 @@ def main():
 
 		y = one_hot_encode(y_raw)
 
-		X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
+		# X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
 
 	except FileNotFoundError:
 		print("data.csv not found. Please ensure the dataset is available.")
 		return
 	
-	indices = np.arange(len(X))
+	indices = np.arange(len(X_raw))
 	np.random.shuffle(indices)
 
-	split_idx = int(len(X) * (1 - args.split))
+	split_idx = int(len(X_raw) * (1 - args.split))
 
 	train_idx, val_idx = indices[:split_idx], indices[split_idx:]
-	X_train, X_val = X[train_idx], X[val_idx]
+	X_train, X_val = X_raw[train_idx], X_raw[val_idx]
 	y_train, y_val = y[train_idx], y[val_idx]
 
 	print(f"Training on {len(X_train)} samples, Validating on {len(X_val)} samples.")
 
-	mlp = MultilayerPerceptron(
+	mlp = model.Model(
 		hidden_layer_sizes=args.layers,
 		learning_rate=args.learning_rate,
 		epochs=args.epochs,

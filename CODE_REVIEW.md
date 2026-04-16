@@ -43,44 +43,71 @@ delta = np.dot(delta, self.weights[-l + 1].T) * self.activation_prime(z)
 
 ---
 
-### [Critical] `predict.py:39` — cross_entropy 호출 오류
+### ~~[Critical] `predict.py:39` — cross_entropy 호출 오류~~ ✅ 수정 완료
+
+`one_hot_encode(y_raw)`를 적용하여 올바른 형태로 전달하도록 수정됨. loss 값도 정상 출력.
 
 ```python
-y_true = np.array([1 if label == 'M' else 0 for label in y_raw])  # shape: (N,)
-y_prob = probabilities[:, 1]                                        # shape: (N,)
-loss = cross_entropy(y_true, y_prob)  # cross_entropy는 one-hot을 기대함!
+# 수정 후 (predict.py:35-38)
+y_true_one_hot = one_hot_encode(y_raw)
+loss = cross_entropy(y_true_one_hot, probabilities)
+print(f"Loss: {loss:.4f}")
 ```
-
-- `cross_entropy` 함수는 one-hot encoded `y_true`를 기대하지만, 여기서는 scalar label(0/1)을 넘깁니다.
-- 계산된 loss 값이 무의미하며, 반환되지도 않습니다 (dead code).
-
-**수정:** one-hot encoding을 적용하거나, binary cross entropy 함수를 별도로 사용합니다.
 
 ---
 
-### [Critical] 학습/추론 시 정규화(Standardization) 불일치
+### ~~[Critical] 학습/추론 시 정규화(Standardization) 불일치~~ ✅ 수정 완료
+
+`model.py:76-81`에서 `mean_train`/`std_train`을 저장하고, `fit()` 내부에서 직접 정규화 처리.
 
 ```python
-# main_train.py:69 (학습)
-X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
-
-# predict.py:30 (추론)
-X = (X - X.mean(axis=0)) / X.std(axis=0)
+self.mean_train = x_train.mean(axis=0)
+self.std_train = x_train.std(axis=0) + 1e-08
+x_train = (x_train - self.mean_train) / self.std_train
+if x_val is not None:
+    x_val = (x_val - self.mean_train) / self.std_train
 ```
 
-학습 시 사용한 `mean`/`std`를 저장하지 않고, 추론 시 **테스트 데이터 자체의** `mean`/`std`로 정규화합니다.  
-Train/test 분포가 다를 경우 **완전히 다른 feature space**에서 예측하게 됩니다.
+`predict.py`도 `model.mean_train` / `model.std_train`을 사용하므로 일관성 확보.
 
-**수정:** 학습 시 `mean`/`std`를 모델과 함께 직렬화하여 저장하고, 추론 시 동일한 값을 사용합니다.
+---
+
+### [Critical] `main.py:80` — `MultilayerPerceptron` 클래스 미존재 (NameError)
+
+`model.py`가 리팩토링되어 `MultilayerPerceptron`이 `Model`로 통합됐으나, `main.py`는 여전히 구버전 클래스명을 사용하고 임포트도 없습니다.
 
 ```python
-# 학습 시
-self.train_mean = X_raw.mean(axis=0)
-self.train_std = X_raw.std(axis=0)
-X = (X_raw - self.train_mean) / self.train_std
+# main.py — import 없음
+# from model import Model  ← 누락
 
-# 추론 시
-X = (X_raw - model.train_mean) / model.train_std
+mlp = MultilayerPerceptron(...)  # NameError: name 'MultilayerPerceptron' is not defined
+```
+
+**수정:** `main.py` 상단에 `from model import Model` 추가 후 `MultilayerPerceptron` → `Model`로 교체.
+
+---
+
+### [Critical] `main.py:63` + `model.py:79` — 이중 정규화
+
+`main.py`에서 정규화한 데이터를 `model.fit()`에 전달하면, 내부에서 한 번 더 정규화됩니다.
+
+```python
+# main.py:63 — 1차 정규화
+X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
+
+# model.py:79 — 2차 정규화 (이미 정규화된 데이터에 재적용)
+x_train = (x_train - self.mean_train) / self.std_train
+```
+
+2차 정규화 시 `mean_train ≈ 0`, `std_train ≈ 1`이므로 수치 영향은 미미하지만, `predict.py`는 raw 데이터에 `model.mean_train`/`std_train`을 적용하므로 **학습/추론 파이프라인이 불일치**합니다.
+
+**수정:** `main.py`의 수동 정규화 코드(line 63)를 제거하고, 정규화는 `model.fit()` 내부에서만 처리.
+
+```python
+# main.py — 제거 대상
+# X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
+
+X_raw = df.iloc[:, 2:].values  # raw 데이터 그대로 전달
 ```
 
 ---
@@ -128,18 +155,57 @@ self.timestap = 0  # "timestep"이 올바른 표기
 
 ---
 
+### [Medium] `optimizer.py:54-55` — Adam이 weights를 in-place 뮤테이션
+
+SGD는 list comprehension으로 새 객체를 생성하는 반면, Adam은 `network.weights[i] -=`로 직접 수정합니다.
+
+```python
+# SGD (새 객체 생성) ✅
+network.weights = [w - self.learning_rate * nw for w, nw in zip(network.weights, nabla_w)]
+
+# Adam (in-place 뮤테이션) ❌
+network.weights[i] -= self.learning_rate * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon)
+network.biases[i]  -= self.learning_rate * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon)
+```
+
+두 옵티마이저의 방식이 일치하지 않습니다. Adam도 새 리스트를 생성하는 방식으로 통일해야 합니다.
+
+---
+
+### [Medium] `optimizer.py:36` — Adam 재훈련 시 상태 미초기화
+
+```python
+if self.m_w is None:  # 최초 1회만 초기화
+    self.m_w = [np.zeros_like(w) for w in network.weights]
+    ...
+self.timestap += 1
+```
+
+`fit()`을 두 번 호출하거나 새 데이터로 재훈련하면, 이전 `m_w`, `v_w`, `timestep`이 누적된 채 학습이 이어집니다. 의도하지 않은 학습 동작을 유발할 수 있습니다.
+
+**수정:** `Model.fit()` 시작 시점에 옵티마이저 상태를 초기화하거나, `Adam.reset()` 메서드를 제공합니다.
+
+```python
+def reset(self):
+    self.m_w = None
+    self.v_w = None
+    self.m_b = None
+    self.v_b = None
+    self.timestep = 0
+```
+
+---
+
 ## 2. 설계 및 구조 문제
 
-### 불필요한 3단 추상화 계층
+### ~~불필요한 3단 추상화 계층~~ ✅ 수정 완료
+
+`MultilayerPerceptron`과 `Model`이 단일 `Model` 클래스로 통합됨.
 
 ```
-MultilayerPerceptron → Model → Network
+(이전) MultilayerPerceptron → Model → Network
+(현재) Model → Network
 ```
-
-- `Model`은 단순히 `Network`에 학습 루프를 추가하는 역할
-- `MultilayerPerceptron`은 `Model`의 얇은 래퍼
-
-`MultilayerPerceptron`과 `Model`을 하나로 합치는 것이 자연스럽습니다.
 
 ---
 
@@ -183,17 +249,53 @@ self.weights.append(np.random.randn(input_dim, output_dim) * scale)
 
 ---
 
-### `split.py`가 프로젝트에서 미사용
+### ~~`split.py`가 프로젝트에서 미사용~~ ✅ 수정 완료
 
-`main_train.py`에서 자체적으로 split을 수행하고 있어, `split.py`의 `split_config` 함수는 dead code입니다.
+`split.py` 파일이 삭제됨. `main.py`에서 직접 split 처리.
 
 ---
 
 ### Early stopping의 제한적 동작
 
-- Validation data 없이 호출 시 early stopping 로직이 아예 실행되지 않음
-- `best_weights`가 `None`인 채로 학습이 끝날 수 있음
-- 이 자체는 버그는 아니지만, 명시적으로 문서화하거나 경고를 추가해야 함
+**문제 1: `early_stopping_rounds`가 외부에서 설정 불가 (model.py:134)**
+
+`MultilayerPerceptron.__init__`에 파라미터가 없어 항상 10으로 하드코딩됩니다.
+
+```python
+# model.py:134 — 하드코딩
+early_stopping_rounds = 10
+```
+
+사용자가 `MultilayerPerceptron(early_stopping_rounds=20)` 형태로 설정할 수 없습니다.
+
+**수정:**
+```python
+# __init__ 파라미터 추가
+def __init__(self, ..., early_stopping_rounds=10):
+    ...
+    self.early_stopping_rounds = early_stopping_rounds
+
+# fit에서 self 참조
+early_stopping_rounds = self.early_stopping_rounds
+```
+
+**문제 2: Validation data 없으면 early stopping이 완전히 비활성화 (model.py:69)**
+
+```python
+if x_val is not None and y_val is not None:
+    ...
+    if patience >= early_stopping_rounds:  # 이 블록 자체가 실행 안 됨
+        ...
+```
+
+`x_val`/`y_val`을 넘기지 않으면 early stopping 로직 전체가 무시되며, 경고 없이 `epochs`까지 풀로 학습됩니다. `best_weights`도 `None`인 채 학습이 끝납니다.
+
+**수정:** validation data가 없을 경우 명시적 경고를 출력하거나, train loss 기반 early stopping으로 fallback 처리합니다.
+
+```python
+if x_val is None or y_val is None:
+    print("Warning: early_stopping_rounds is set but no validation data provided. Early stopping disabled.")
+```
 
 ---
 
@@ -260,11 +362,17 @@ def sigmoid(x):
 | 순위 | 항목 | 위치 | 심각도 |
 |------|------|------|--------|
 | 1 | ~~Import 오타 (`standarize` → `standardize`)~~ ✅ | `network.py:5` 수정 완료 | Critical |
-| 2 | 추론 시 정규화 mean/std 불일치 | `predict.py:30` | Critical |
-| 3 | Gradient를 batch_size로 정규화 | `network.py:108-109` | Critical |
-| 4 | He/Xavier weight initialization 실제 구현 | `network.py:61-68` | Important |
-| 5 | ~~backward에서 z vs a 일관성 확보~~ ✅ | `network.py:114` 수정 완료 (`106` 출력층 잔여) | Important |
-| 6 | cross_entropy 호출 오류 | `predict.py:39` | Important |
-| 7 | 불필요한 3단 클래스 구조 단순화 | 전체 구조 | Improvement |
-| 8 | Docstring 위치, type hint 일관성 (`relu_prime` ✅) | `utils.py`, 전체 | Style |
-| 9 | 오타 수정 (`timestap` → `timestep`) | `optimizer.py:33` | Low |
+| 2 | ~~정규화 불일치~~ ✅ | `model.py:76-81` 수정 완료 | Critical |
+| 3 | `main.py`에서 `MultilayerPerceptron` NameError (미임포트) | `main.py:80` | Critical |
+| 4 | `main.py` + `model.fit()` 이중 정규화 | `main.py:63`, `model.py:79` | Critical |
+| 5 | Gradient를 batch_size로 정규화 | `network.py:108-109` | Critical |
+| 6 | He/Xavier weight initialization 실제 구현 | `network.py:61-68` | Important |
+| 7 | ~~backward에서 z vs a 일관성 확보~~ ✅ | `network.py:114` 수정 완료 (`106` 출력층 잔여) | Important |
+| 8 | ~~cross_entropy 호출 오류~~ ✅ | `predict.py:39` 수정 완료 | Important |
+| 9 | ~~불필요한 3단 클래스 구조~~ ✅ | `Model → Network`으로 통합 완료 | Improvement |
+| 10 | Docstring 위치, type hint 일관성 (`relu_prime` ✅) | `utils.py`, 전체 | Style |
+| 11 | 오타 수정 (`timestap` → `timestep`) | `optimizer.py:33` | Low |
+| 12 | `early_stopping_rounds` 하드코딩 → `__init__` 파라미터로 노출 | `model.py:65` | Medium |
+| 13 | Validation data 없을 시 early stopping 경고 없이 비활성화 | `model.py:118` | Medium |
+| 14 | Adam in-place 뮤테이션 → SGD와 방식 불일치 | `optimizer.py:54-55` | Medium |
+| 15 | Adam 재훈련 시 m/v/timestep 상태 미초기화 | `optimizer.py:36` | Medium |
