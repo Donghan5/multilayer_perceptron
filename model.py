@@ -48,6 +48,17 @@ class Model:
 		:param y_val: Validation target data
 		:param early_stopping_rounds: Number of epochs with no improvement to stop training
 		"""
+
+		# Convert pandas dataframe to numpy array
+		if hasattr(x_train, 'values'):
+			x_train = x_train.values
+		if hasattr(y_train, 'values'):
+			y_train = y_train.values
+		if x_val is not None and hasattr(x_val, 'values'):
+			x_val = x_val.values
+		if y_val is not None and hasattr(y_val, 'values'):
+			y_val = y_val.values
+		
 		history = {'loss':[], 'val_loss':[], 'accuracy':[], 'val_accuracy':[]}
 
 		if self.solver == "adam":
@@ -57,10 +68,7 @@ class Model:
 	
 		n_samples = len(x_train)
 
-		if hasattr(x_train, 'values'):
-			input_size = x_train.shape[1]
-		else:
-			input_size = x_train.shape[1]
+		input_size = x_train.shape[1]
 		
 		early_stopping_rounds = 10
 		
@@ -90,12 +98,8 @@ class Model:
 			indices = np.arange(n_samples)
 			np.random.shuffle(indices)
 
-			if hasattr(x_train, 'iloc'):
-				x_shuffled = x_train.iloc[indices].values
-				y_shuffled = y_train.iloc[indices].values
-			else:
-				x_shuffled = x_train[indices]
-				y_shuffled = y_train[indices]
+			x_shuffled = x_train[indices]
+			y_shuffled = y_train[indices]
 			
 			for i in range(0, n_samples, self.batch_size):
 				x_batch = x_shuffled[i : i + self.batch_size]

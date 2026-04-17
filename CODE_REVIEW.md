@@ -147,51 +147,39 @@ nabla_b[-1] = np.sum(delta, axis=0) / batch_size
 
 ---
 
-### [Low] `optimizer.py:33` — 오타
+### ~~[Low] `optimizer.py:33` — 오타~~ ✅ 수정 완료
 
 ```python
-self.timestap = 0  # "timestep"이 올바른 표기
+self.timestep = 0  # "timestap" → "timestep" 수정 완료
 ```
 
 ---
 
-### [Medium] `optimizer.py:54-55` — Adam이 weights를 in-place 뮤테이션
+### ~~[Medium] `optimizer.py:54-55` — Adam이 weights를 in-place 뮤테이션~~ ✅ 수정 완료
 
-SGD는 list comprehension으로 새 객체를 생성하는 반면, Adam은 `network.weights[i] -=`로 직접 수정합니다.
+`new_weights`, `new_biases` 리스트를 생성한 뒤 한 번에 할당하는 방식으로 SGD와 통일됨.
 
 ```python
-# SGD (새 객체 생성) ✅
-network.weights = [w - self.learning_rate * nw for w, nw in zip(network.weights, nabla_w)]
-
-# Adam (in-place 뮤테이션) ❌
-network.weights[i] -= self.learning_rate * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon)
-network.biases[i]  -= self.learning_rate * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon)
+# Adam (새 객체 생성) ✅
+new_weights.append(network.weights[i] - self.learning_rate * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon))
+new_biases.append(network.biases[i] - self.learning_rate * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon))
+...
+network.weights = new_weights
+network.biases = new_biases
 ```
-
-두 옵티마이저의 방식이 일치하지 않습니다. Adam도 새 리스트를 생성하는 방식으로 통일해야 합니다.
 
 ---
 
-### [Medium] `optimizer.py:36` — Adam 재훈련 시 상태 미초기화
+### ~~[Medium] `optimizer.py:36` — Adam 재훈련 시 상태 미초기화~~ ✅ 효과적으로 해결
+
+`model.py`의 `fit()`이 호출될 때마다 새 `Adam` 인스턴스를 생성하므로, 이전 `m_w`, `v_w`, `timestep`이 누적되는 문제가 실질적으로 해결됨.
 
 ```python
-if self.m_w is None:  # 최초 1회만 초기화
-    self.m_w = [np.zeros_like(w) for w in network.weights]
-    ...
-self.timestap += 1
-```
-
-`fit()`을 두 번 호출하거나 새 데이터로 재훈련하면, 이전 `m_w`, `v_w`, `timestep`이 누적된 채 학습이 이어집니다. 의도하지 않은 학습 동작을 유발할 수 있습니다.
-
-**수정:** `Model.fit()` 시작 시점에 옵티마이저 상태를 초기화하거나, `Adam.reset()` 메서드를 제공합니다.
-
-```python
-def reset(self):
-    self.m_w = None
-    self.v_w = None
-    self.m_b = None
-    self.v_b = None
-    self.timestep = 0
+# model.py:64-67 — fit() 호출 시마다 새 optimizer 생성
+if self.solver == "adam":
+    optimizer = Adam(self.learning_rate)
+else:
+    optimizer = Sgd(self.learning_rate)
 ```
 
 ---
@@ -371,8 +359,8 @@ def sigmoid(x):
 | 8 | ~~cross_entropy 호출 오류~~ ✅ | `predict.py:39` 수정 완료 | Important |
 | 9 | ~~불필요한 3단 클래스 구조~~ ✅ | `Model → Network`으로 통합 완료 | Improvement |
 | 10 | Docstring 위치, type hint 일관성 (`relu_prime` ✅) | `utils.py`, 전체 | Style |
-| 11 | 오타 수정 (`timestap` → `timestep`) | `optimizer.py:33` | Low |
-| 12 | `early_stopping_rounds` 하드코딩 → `__init__` 파라미터로 노출 | `model.py:65` | Medium |
-| 13 | Validation data 없을 시 early stopping 경고 없이 비활성화 | `model.py:118` | Medium |
-| 14 | Adam in-place 뮤테이션 → SGD와 방식 불일치 | `optimizer.py:54-55` | Medium |
-| 15 | Adam 재훈련 시 m/v/timestep 상태 미초기화 | `optimizer.py:36` | Medium |
+| 11 | ~~오타 수정 (`timestap` → `timestep`)~~ ✅ | `optimizer.py:33` 수정 완료 | Low |
+| 12 | `early_stopping_rounds` 하드코딩 → `__init__` 파라미터로 노출 | `model.py:73` | Medium |
+| 13 | Validation data 없을 시 early stopping 경고 없이 비활성화 | `model.py:122` | Medium |
+| 14 | ~~Adam in-place 뮤테이션 → SGD와 방식 불일치~~ ✅ | `optimizer.py:59-60` 수정 완료 | Medium |
+| 15 | ~~Adam 재훈련 시 m/v/timestep 상태 미초기화~~ ✅ | `fit()` 호출 시 새 인스턴스 생성으로 해결 | Medium |

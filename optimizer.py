@@ -31,6 +31,7 @@ class Adam:
 		self.m_b = None	# 1st Momentum
 		self.v_b = None	# 2nd RMSProp
 		self.timestep = 0
+		
 	
 	def update(self, network, nabla_w, nabla_b):
 		if self.m_w is None:
@@ -40,6 +41,9 @@ class Adam:
 			self.v_b = [np.zeros_like(b) for b in network.biases]
 		self.timestep += 1
 
+		new_weights = []
+		new_biases = []
+
 		# Update weight and bias
 		for i in range(len(network.weights)):
 			self.m_w[i] = self.beta1 * self.m_w[i] + (1 - self.beta1) * nabla_w[i]
@@ -47,14 +51,13 @@ class Adam:
 			self.m_b[i] = self.beta1 * self.m_b[i] + (1 - self.beta1) * nabla_b[i]
 			self.v_b[i] = self.beta2 * self.v_b[i] + (1 - self.beta2) * nabla_b[i] ** 2
 			
-			m_w_hat = self.m_w[i] / (1 - self.beta1 ** self.timestap)
-			v_w_hat = self.v_w[i] / (1 - self.beta2 ** self.timestap)
-			m_b_hat = self.m_b[i] / (1 - self.beta1 ** self.timestap)
-			v_b_hat = self.v_b[i] / (1 - self.beta2 ** self.timestap)
-			network.weights[i] -= self.learning_rate * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon)
-			network.biases[i] -= self.learning_rate * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon)
+			m_w_hat = self.m_w[i] / (1 - self.beta1 ** self.timestep)
+			v_w_hat = self.v_w[i] / (1 - self.beta2 ** self.timestep)
+			m_b_hat = self.m_b[i] / (1 - self.beta1 ** self.timestep)
+			v_b_hat = self.v_b[i] / (1 - self.beta2 ** self.timestep)
+			
+			new_weights.append(network.weights[i] - self.learning_rate * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon))
+			new_biases.append(network.biases[i] - self.learning_rate * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon))
 
-		network.weights = [
-    		w - self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
-    		for w, m_hat, v_hat in zip(network.weights, m_w_hats, v_w_hats)
-		]
+		network.weights = new_weights
+		network.biases = new_biases
