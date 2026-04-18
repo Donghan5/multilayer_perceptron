@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-
 from dataclasses import dataclass
 from utils import standardize, sigmoid, sigmoid_prime, relu, relu_prime, softmax, cross_entropy, cross_entropy_prime, mse, mse_prime
 
@@ -10,6 +9,7 @@ class NetworkConfig:
 	activation: str
 	loss: str
 	output_activation: str
+	weights_initializer: str = "heUniform"
 
 class Network:
 	def __init__(self, config: NetworkConfig) -> None:
@@ -62,9 +62,18 @@ class Network:
 		for i in range(len(self.config.layers) - 1):
 			input_dim = self.config.layers[i]
 			output_dim = self.config.layers[i + 1]
+
+			if self.config.weights_initializer == "heUniform":
+				limit = np.sqrt(6 / input_dim)
+				w = np.random.uniform(-limit, limit, size=(input_dim, output_dim))
 			
-			scale = 0.1 
-			self.weights.append(np.random.randn(input_dim, output_dim) * scale)
+			elif self.config.weights_initializer == "xavierUniform":
+				limit = np.sqrt(6 / (input_dim + output_dim))
+				w = np.random.uniform(-limit, limit, size=(input_dim, output_dim))
+			else:
+				raise ValueError(f"Unsupported initializer: {self.config.weights_initializer}")
+			
+			self.weights.append(w)
 			self.biases.append(np.zeros(output_dim))
 	
 	def forward(self, x):
@@ -99,11 +108,12 @@ class Network:
 		nabla_b = [np.zeros(b.shape) for b in self.biases]
 		
 		y_pred = self.activations[-1]
+		batch_size = y_true.shape[0]
 		
 		if self.config.loss == "cross_entropy":
-			delta = y_pred - y_true
+			delta = (y_pred - y_true) / batch_size
 		else:
-			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(y_pred)
+			delta = self.loss_prime(y_true, y_pred) * self.activation_prime(y_pred) / batch_size
 		
 		nabla_w[-1] = np.dot(self.activations[-2].T, delta)
 		nabla_b[-1] = np.sum(delta, axis=0)

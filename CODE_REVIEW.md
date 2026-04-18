@@ -72,43 +72,15 @@ if x_val is not None:
 
 ---
 
-### [Critical] `main.py:80` — `MultilayerPerceptron` 클래스 미존재 (NameError)
+### ~~[Critical] `main.py:80` — `MultilayerPerceptron` 클래스 미존재 (NameError)~~ ✅ 수정 완료
 
-`model.py`가 리팩토링되어 `MultilayerPerceptron`이 `Model`로 통합됐으나, `main.py`는 여전히 구버전 클래스명을 사용하고 임포트도 없습니다.
-
-```python
-# main.py — import 없음
-# from model import Model  ← 누락
-
-mlp = MultilayerPerceptron(...)  # NameError: name 'MultilayerPerceptron' is not defined
-```
-
-**수정:** `main.py` 상단에 `from model import Model` 추가 후 `MultilayerPerceptron` → `Model`로 교체.
+`import model` 추가 및 `model.Model(...)` 으로 교체 완료. `MultilayerPerceptron` 참조 제거됨.
 
 ---
 
-### [Critical] `main.py:63` + `model.py:79` — 이중 정규화
+### ~~[Critical] `main.py:63` + `model.py:79` — 이중 정규화~~ ✅ 수정 완료
 
-`main.py`에서 정규화한 데이터를 `model.fit()`에 전달하면, 내부에서 한 번 더 정규화됩니다.
-
-```python
-# main.py:63 — 1차 정규화
-X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
-
-# model.py:79 — 2차 정규화 (이미 정규화된 데이터에 재적용)
-x_train = (x_train - self.mean_train) / self.std_train
-```
-
-2차 정규화 시 `mean_train ≈ 0`, `std_train ≈ 1`이므로 수치 영향은 미미하지만, `predict.py`는 raw 데이터에 `model.mean_train`/`std_train`을 적용하므로 **학습/추론 파이프라인이 불일치**합니다.
-
-**수정:** `main.py`의 수동 정규화 코드(line 63)를 제거하고, 정규화는 `model.fit()` 내부에서만 처리.
-
-```python
-# main.py — 제거 대상
-# X = (X_raw - X_raw.mean(axis=0)) / X_raw.std(axis=0)
-
-X_raw = df.iloc[:, 2:].values  # raw 데이터 그대로 전달
-```
+`main.py:63`의 수동 정규화 코드를 주석 처리하고, `X_raw`를 그대로 `model.fit()`에 전달하도록 수정됨. 정규화는 `model.fit()` 내부에서만 처리.
 
 ---
 
@@ -351,8 +323,8 @@ def sigmoid(x):
 |------|------|------|--------|
 | 1 | ~~Import 오타 (`standarize` → `standardize`)~~ ✅ | `network.py:5` 수정 완료 | Critical |
 | 2 | ~~정규화 불일치~~ ✅ | `model.py:76-81` 수정 완료 | Critical |
-| 3 | `main.py`에서 `MultilayerPerceptron` NameError (미임포트) | `main.py:80` | Critical |
-| 4 | `main.py` + `model.fit()` 이중 정규화 | `main.py:63`, `model.py:79` | Critical |
+| 3 | ~~`main.py`에서 `MultilayerPerceptron` NameError (미임포트)~~ ✅ | `main.py:80` 수정 완료 | Critical |
+| 4 | ~~`main.py` + `model.fit()` 이중 정규화~~ ✅ | `main.py:63`, `model.py:79` 수정 완료 | Critical |
 | 5 | Gradient를 batch_size로 정규화 | `network.py:108-109` | Critical |
 | 6 | He/Xavier weight initialization 실제 구현 | `network.py:61-68` | Important |
 | 7 | ~~backward에서 z vs a 일관성 확보~~ ✅ | `network.py:114` 수정 완료 (`106` 출력층 잔여) | Important |
