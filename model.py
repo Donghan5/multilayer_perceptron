@@ -16,9 +16,9 @@ class Model:
 		learning_rate=0.0314,
 		epochs=100,
 		batch_size=8,
-		weight_init="HeUniform",
-		random_seed=None,
+		weights_initializer="heUniform",
 		solver="sgd",
+		early_stopping_rounds=10
 	):
 		self.hidden_layer_sizes = hidden_layer_sizes
 		self.output_layer_size = output_layer_size
@@ -28,12 +28,10 @@ class Model:
 		self.learning_rate = learning_rate
 		self.epochs = epochs
 		self.batch_size = batch_size
-		self.weight_init = weight_init
-		self.random_seed = random_seed
-
+		self.weights_initializer = weights_initializer
 		self.network = None
-
 		self.solver = solver
+		self.early_stopping_rounds = early_stopping_rounds
 	
 	def fit(self, x_train, y_train, x_val=None, y_val=None):
 		"""
@@ -59,6 +57,9 @@ class Model:
 		if y_val is not None and hasattr(y_val, 'values'):
 			y_val = y_val.values
 		
+		if x_val is None or y_val is None:
+			print("Warning: no validation data provided, early stopping disabled.")
+		
 		history = {'loss':[], 'val_loss':[], 'accuracy':[], 'val_accuracy':[]}
 
 		if self.solver == "adam":
@@ -70,20 +71,21 @@ class Model:
 
 		input_size = x_train.shape[1]
 		
-		early_stopping_rounds = 10
+		early_stopping_rounds = self.early_stopping_rounds
 		
 		layers = [input_size] + self.hidden_layer_sizes + [self.output_layer_size]
 		config = NetworkConfig(
 			layers=layers,
 			activation=self.activation,
 			loss=self.loss,
-			output_activation=self.output_activation
+			output_activation=self.output_activation,
+			weights_initializer=self.weights_initializer
 		)
 		self.network = Network(config)
 
 		self.mean_train = x_train.mean(axis=0)
 		self.std_train = x_train.std(axis=0) + 1e-08
-
+	
 		x_train = (x_train - self.mean_train) / self.std_train
 		if x_val is not None:
 			x_val = (x_val - self.mean_train) / self.std_train
