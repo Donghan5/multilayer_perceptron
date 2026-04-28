@@ -117,8 +117,9 @@ def trained_model():
 
     mlp = model_module.Model(
         hidden_layer_sizes=[24, 24, 24],
-        learning_rate=0.001, epochs=200, batch_size=8,
-        solver="adam", output_activation="softmax",
+        learning_rate=0.003, epochs=200, batch_size=8,
+        solver="adam", activation="sigmoid",
+        output_activation="softmax",
         loss="cross_entropy", weights_initializer="heUniform",
     )
     history = mlp.fit(X_train, y_train, X_val, y_val)

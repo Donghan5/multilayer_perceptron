@@ -6,3 +6,5 @@ learning_curve.png
 memory
 .pytest_cache
 .claude
+train.csv
+validation.csv

@@ -35,7 +35,7 @@ def test_save_load_predictions_match(tmp_path):
 
 @pytest.mark.parametrize("arg", [
     "--data", "--layers", "--epochs", "--batch_size",
-    "--learning_rate", "--split", "--solver", "--seed",
+    "--learning_rate", "--val_data", "--solver", "--seed",
 ])
 def test_argparse_has_param(arg):
     """K3: main.py exposes required CLI arguments."""

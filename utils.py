@@ -1,13 +1,4 @@
 import numpy as np
-import pandas as pd
-
-def standardize(dataframe: pd.DataFrame, target: str) -> None:
-	"""
-		Standardize the dataframe except for the target column
-	"""
-	features = [x for x in dataframe.columns if x != target]
-	df_features = dataframe[features]
-	dataframe[features] = (df_features - df_features.mean()) / df_features.std()
 
 def sigmoid(x: np.ndarray) -> np.ndarray:
 	"""
@@ -16,6 +7,7 @@ def sigmoid(x: np.ndarray) -> np.ndarray:
 			- Using the formula: 1 / (1 + e^(-x))
 			- Avoiding overflow by using the property of e^x = 1 / e^(-x), so multiplying by e^x
 	"""
+	x = np.clip(x, -500, 500)
 	return np.where(x >= 0,
                     1 / (1 + np.exp(-x)),
                     np.exp(x) / (1 + np.exp(x)))

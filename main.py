@@ -8,12 +8,12 @@ from utils import one_hot_encode
 
 def get_args():
 	parser = argparse.ArgumentParser(description="Train the MLP model.")
-	parser.add_argument("--data", type=str, default="data.csv", help="Path to the training data CSV file.")
+	parser.add_argument("--data", type=str, default="train.csv", help="Path to the training data CSV file.")
+	parser.add_argument("--val_data", type=str, default="validation.csv", help="Path to the validation data CSV file.")
 	parser.add_argument("--layers", type=int, nargs='+', default=[24, 24, 24], help="Sizes of hidden layers.")
 	parser.add_argument("--epochs", type=int, default=200, help="Number of training epochs.")
 	parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
 	parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for the optimizer.")
-	parser.add_argument("--split", type=float, default=0.2, help="Train/validation split ratio.")
 	parser.add_argument("--solver", type=str, default="adam", help="Select optimizer adam or sgd")
 	parser.add_argument("--weights_initializer", type=str, default="heUniform", help="Select weights initializer heUniform or xavierUniform")
 	parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
@@ -60,26 +60,22 @@ def main():
 	if args.seed is not None:
 		np.random.seed(args.seed)
 		
+	# Load train and validate data
 	try:
-		df = pd.read_csv(args.data, header=None)
-
-		y_raw = df.iloc[:, 1].values
-		X_raw = df.iloc[:, 2:].values
-
-		y = one_hot_encode(y_raw)
-
-	except FileNotFoundError:
-		print("data.csv not found. Please ensure the dataset is available.")
+		df_train = pd.read_csv(args.data, header=None)
+		df_val = pd.read_csv(args.val_data, header=None)
+	except FileNotFoundError as e:
+		print(f"File not found: {e}")
+		print("Run 'python split_data.py' to split the dataset into train and validation sets.")
 		return
-	
-	indices = np.arange(len(X_raw))
-	np.random.shuffle(indices)
 
-	split_idx = int(len(X_raw) * (1 - args.split))
+	X_train = df_train.iloc[:, 2:].values
+	y_train = df_train.iloc[:, 1].values
+	X_val = df_val.iloc[:, 2:].values
+	y_val = df_val.iloc[:, 1].values
 
-	train_idx, val_idx = indices[:split_idx], indices[split_idx:]
-	X_train, X_val = X_raw[train_idx], X_raw[val_idx]
-	y_train, y_val = y[train_idx], y[val_idx]
+	y_train = one_hot_encode(y_train)
+	y_val = one_hot_encode(y_val)
 
 	print(f"Training on {len(X_train)} samples, Validating on {len(X_val)} samples.")
 
