@@ -1,54 +1,50 @@
 import numpy as np
 import pandas as pd
 
-"""
-	Standardize the dataframe except for the target column
-"""
 def standardize(dataframe: pd.DataFrame, target: str) -> None:
+	"""
+		Standardize the dataframe except for the target column
+	"""
 	features = [x for x in dataframe.columns if x != target]
 	df_features = dataframe[features]
 	dataframe[features] = (df_features - df_features.mean()) / df_features.std()
 
-"""
-	Sigmoid activation function
-		- Setting the value between 0 and 1
-		- Using the formula: 1 / (1 + e^(-x))
-		- Avoiding overflow by using the property of e^x = 1 / e^(-x), so multiplying by e^x
-"""
-def sigmoid(x):
-    return np.where(x >= 0,
+def sigmoid(x: np.ndarray) -> np.ndarray:
+	"""
+		Sigmoid activation function
+			- Setting the value between 0 and 1
+			- Using the formula: 1 / (1 + e^(-x))
+			- Avoiding overflow by using the property of e^x = 1 / e^(-x), so multiplying by e^x
+	"""
+	return np.where(x >= 0,
                     1 / (1 + np.exp(-x)),
                     np.exp(x) / (1 + np.exp(x)))
 
-"""
-	Derivative of sigmoid function
-"""
-def sigmoid_prime(x):
-	return np.multiply(x, (1 - x))
+def sigmoid_prime(z: np.ndarray) -> np.ndarray:
+	"""
+		Derivative of sigmoid function
+		compute -> sigmoid(z) * (1 - sigmoid(z))
+	"""
+	s = sigmoid(z)
+	return np.multiply(s, (1 - s))
 
-"""
-	ReLU activation function
-		- If the input value is a positive number, return it
-		- Else, the case of 0 or negative number, return 0
-"""
-def relu(x):
+def relu(x: np.ndarray) -> np.ndarray:
+	"""
+		ReLU activation function
+			- If the input value is a positive number, return it
+			- Else, the case of 0 or negative number, return 0
+	"""
 	return np.maximum(0, x)
 
-"""
-	Derivative of ReLU activation function
-"""
 def relu_prime(x: np.ndarray) -> np.ndarray:
+	"""
+		Derivative of ReLU activation function
+	"""
 	return (x > 0).astype(int)
 
 def softmax(x: np.ndarray) -> np.ndarray:
 	x_exps = np.exp(x - np.max(x, axis=1, keepdims=True))
 	return x_exps / np.sum(x_exps, axis=1, keepdims=True)
-
-def mse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-	return np.mean(np.power(y_true - y_pred, 2))
-
-def mse_prime(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
-	return 2 * (y_pred - y_true) / y_true.size
 
 def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 	"""
@@ -60,17 +56,10 @@ def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 	y_pred_clipped = np.clip(y_pred, epsilon, 1 - epsilon)
 	return -np.sum(y_true * np.log(y_pred_clipped)) / y_true.shape[0]
 
-def cross_entropy_prime(y_true, y_pred):
+def one_hot_encode(y: np.ndarray) -> np.ndarray:
 	"""
-	Compute the derivative of cross entropy loss
-	y_true: true labels (one-hot encoded)
-	y_pred: predicted probabilities
+		One-hot encode the target labels
 	"""
-	epsilon = 1e-15
-	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
-	return - (y_true / y_pred) + ((1 - y_true) / (1 - y_pred))
-
-def one_hot_encode(y):
 	encoded = np.zeros((len(y), 2))
 	for i, label in enumerate(y):
 		if label == 'M':

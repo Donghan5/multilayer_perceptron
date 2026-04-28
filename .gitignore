@@ -4,3 +4,5 @@ model.pkl
 learning_curve.png
 .omc
 memory
+.pytest_cache
+.claude

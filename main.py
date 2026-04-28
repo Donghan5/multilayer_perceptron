@@ -17,6 +17,7 @@ def get_args():
 	parser.add_argument("--solver", type=str, default="adam", help="Select optimizer adam or sgd")
 	parser.add_argument("--weights_initializer", type=str, default="heUniform", help="Select weights initializer heUniform or xavierUniform")
 	parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
+	parser.add_argument("--activation", type=str, default="relu", help="Hidden layer activation function: relu or sigmoid")
 	return parser.parse_args()
 
 
@@ -88,6 +89,7 @@ def main():
 		epochs=args.epochs,
 		batch_size=args.batch_size,
 		solver=args.solver,
+		activation=args.activation,
 		output_activation="softmax",
 		loss="cross_entropy",
 		weights_initializer=args.weights_initializer
