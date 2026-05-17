@@ -12,7 +12,7 @@ def get_args() -> SplitConfig:
 	parser = argparse.ArgumentParser(description="Split the dataset into training and validation sets")
 	parser.add_argument("dataset", type=str, help="Path to the dataset")
 	parser.add_argument("--ratio", type=float, default=0.8, help="Ratio of training data")
-	parser.add_argument("--seed", type=int, default=-1, help="Seed for random number generator")
+	parser.add_argument("--seed", type=int, default=42, help="Seed for random number generator")
 	args = parser.parse_args()
 	return SplitConfig(dataset=args.dataset, ratio=args.ratio, seed=args.seed)
 
