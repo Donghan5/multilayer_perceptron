@@ -1,6 +1,7 @@
 .venv
 __pycache__
 model.pkl
+model.npz
 learning_curve.png
 .omc
 memory

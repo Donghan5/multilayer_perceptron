@@ -95,7 +95,7 @@ def main():
 	history = mlp.fit(X_train, y_train, X_val, y_val)
 	print("Training completed.")
 
-	mlp.save("model.pkl")
+	mlp.save("model.npz")
 
 	plot_learning_curve(history)
 

@@ -3,7 +3,6 @@ import copy
 import pandas as pd
 from network import Network, NetworkConfig
 from optimizer import Sgd, Adam
-import pickle
 
 class Model:
 	def __init__(
@@ -18,7 +17,8 @@ class Model:
 		batch_size=8,
 		weights_initializer="heUniform",
 		solver="sgd",
-		early_stopping_rounds=10
+		early_stopping_rounds=10,
+		min_delta=1e-4
 	):
 		self.hidden_layer_sizes = hidden_layer_sizes
 		self.output_layer_size = output_layer_size
@@ -32,7 +32,7 @@ class Model:
 		self.network = None
 		self.solver = solver
 		self.early_stopping_rounds = early_stopping_rounds
-	
+		self.min_delta = min_delta
 	def fit(self, x_train, y_train, x_val=None, y_val=None):
 		"""
 		:param self: Class itself
@@ -131,8 +131,8 @@ class Model:
 				history['val_loss'].append(val_loss)
 				history['val_accuracy'].append(val_accuracy)
 				log_msg += f" - val_loss: {val_loss:.4f} - val_accuracy: {val_accuracy:.4f}"
-			
-				if val_loss < best_loss:
+
+				if val_loss < best_loss - self.min_delta:
 					best_loss = val_loss
 					patience = 0
 					best_weights = copy.deepcopy(self.network.weights)
@@ -140,8 +140,10 @@ class Model:
 				else:
 					patience += 1
 					if patience >= early_stopping_rounds:
+						best_epoch = 0
+						best_epoch = epoch + 1
 						print(f"\nEarly stopping at epoch {epoch + 1}")
-						print(f"Restoring best weights from epoch {epoch + 1 - patience} (Loss: {best_loss:.4f})")
+						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.4f})")
 						self.network.weights = best_weights
 						self.network.biases = best_biases
 						break
@@ -150,12 +152,74 @@ class Model:
 		return history
 
 	def predict(self, X):
-		if self.network:
-			return self.network.forward(X)
-		return None
-	
+		""" Predict class probabilities for the input data """
+		if self.network is None:
+			return None
+		# Standardize input using training mean and std
+		X = np.asarray(X)
+		X = (X - self.mean_train) / self.std_train
+		return self.network.forward(X)
+
 	def save(self, filename):
 		""" Save the model to a file """
-		with open(filename, 'wb') as f:
-			pickle.dump(self, f)
+		if self.network is None:
+			raise ValueError("Cannot save an untrained model.")
+		
+		payload = {
+			"layers": np.array(self.network.config.layers, dtype=np.int64),
+			"activation": np.array(self.network.config.activation),
+			"output_activation": np.array(self.network.config.output_activation),
+			"loss": np.array(self.network.config.loss),
+			"weights_initializer": np.array(self.network.config.weights_initializer),
+			"mean_train": self.mean_train,
+			"std_train": self.std_train,
+		}
+
+		for i, (W, b) in enumerate(zip(self.network.weights, self.network.biases)):
+			payload[f"W{i}"] = W
+			payload[f"b{i}"] = b
+
+		np.savez(filename, **payload)
 		print(f"Model saved to {filename}")
+
+	@staticmethod
+	def load(self, filename="model.npz"):
+		data = np.load(filename, allow_pickle=False)
+
+		layers = data["layers"].tolist()
+		actiavation = data["activation"].item()
+		output_activation = data["output_activation"].item()
+		loss = data["loss"].item()
+		weights_initializer = data["weights_initializer"].item()
+
+
+		model = Model(
+			hidden_layer_sizes=layers[1:-1],
+			output_layer_size=layers[-1],
+			activation=actiavation,
+			output_activation=output_activation,
+			loss=loss,
+			weights_initializer=weights_initializer
+		)
+
+		config = NetworkConfig(
+			layers=layers,
+			activation=actiavation,
+			output_activation=output_activation,
+			loss=loss,
+			weights_initializer=weights_initializer
+		)
+
+		model.network = Network(config)
+
+		model.network.weights = [
+			data[f"W{i}"] for i in range(len(layers) - 1)
+		]
+		model.network.biases = [
+			data[f"b{i}"] for i in range(len(layers) - 1)
+		]
+
+		model.mean_train = data["mean_train"]
+		model.std_train = data["std_train"]
+
+		return model
