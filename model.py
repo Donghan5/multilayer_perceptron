@@ -120,7 +120,7 @@ class Model:
 			history['loss'].append(train_loss)
 			history['accuracy'].append(train_accuracy)
 
-			log_msg = f"Epoch {epoch + 1}/{self.epochs} - loss: {train_loss:.4f} - accuracy: {train_accuracy:.4f}"
+			log_msg = f"Epoch {epoch + 1}/{self.epochs} - loss: {train_loss:.6f} - accuracy: {train_accuracy:.6f}"
 			if x_val is not None and y_val is not None:
 				val_output = self.network.forward(x_val)
 				val_loss = self.network.loss(y_val, val_output)
@@ -130,20 +130,19 @@ class Model:
 
 				history['val_loss'].append(val_loss)
 				history['val_accuracy'].append(val_accuracy)
-				log_msg += f" - val_loss: {val_loss:.4f} - val_accuracy: {val_accuracy:.4f}"
+				log_msg += f" - val_loss: {val_loss:.6f} - val_accuracy: {val_accuracy:.6f}"
 
 				if val_loss < best_loss - self.min_delta:
 					best_loss = val_loss
+					best_epoch = epoch + 1
 					patience = 0
 					best_weights = copy.deepcopy(self.network.weights)
 					best_biases = copy.deepcopy(self.network.biases)
 				else:
 					patience += 1
 					if patience >= early_stopping_rounds:
-						best_epoch = 0
-						best_epoch = epoch + 1
 						print(f"\nEarly stopping at epoch {epoch + 1}")
-						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.4f})")
+						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f})")
 						self.network.weights = best_weights
 						self.network.biases = best_biases
 						break
@@ -183,7 +182,7 @@ class Model:
 		print(f"Model saved to {filename}")
 
 	@staticmethod
-	def load(self, filename="model.npz"):
+	def load(filename="model.npz"):
 		data = np.load(filename, allow_pickle=False)
 
 		layers = data["layers"].tolist()
