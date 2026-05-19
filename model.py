@@ -16,7 +16,7 @@ class Model:
 		epochs=100,
 		batch_size=8,
 		weights_initializer="heUniform",
-		solver="sgd",
+		solver="adam",
 		early_stopping_rounds=10,
 		min_delta=1e-4
 	):
@@ -30,6 +30,8 @@ class Model:
 		self.batch_size = batch_size
 		self.weights_initializer = weights_initializer
 		self.network = None
+		if solver not in ("adam", "sgd"):
+			raise ValueError("solver must be 'adam' or 'sgd'.")
 		self.solver = solver
 		self.early_stopping_rounds = early_stopping_rounds
 		self.min_delta = min_delta
@@ -131,6 +133,7 @@ class Model:
 				history['val_loss'].append(val_loss)
 				history['val_accuracy'].append(val_accuracy)
 				log_msg += f" - val_loss: {val_loss:.6f} - val_accuracy: {val_accuracy:.6f}"
+				log_msg += f" - best_loss: {best_loss:.6f} - patience: {patience}/{early_stopping_rounds}"
 
 				if val_loss < best_loss - self.min_delta:
 					best_loss = val_loss
@@ -142,7 +145,7 @@ class Model:
 					patience += 1
 					if patience >= early_stopping_rounds:
 						print(f"\nEarly stopping at epoch {epoch + 1}")
-						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f})")
+						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f}) - patience: {patience}/{early_stopping_rounds}")
 						self.network.weights = best_weights
 						self.network.biases = best_biases
 						break

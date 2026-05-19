@@ -14,7 +14,7 @@ def get_args():
 	parser.add_argument("--epochs", type=int, default=200, help="Number of training epochs.")
 	parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
 	parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for the optimizer.")
-	parser.add_argument("--solver", type=str, default="adam", help="Select optimizer adam or sgd")
+	parser.add_argument("--solver", type=str.lower, choices=["adam", "sgd"], default="adam", help="Select optimizer: adam or sgd.")
 	parser.add_argument("--weights_initializer", type=str, default="heUniform", help="Select weights initializer heUniform or xavierUniform")
 	parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
 	parser.add_argument("--activation", type=str, default="relu", help="Hidden layer activation function: relu or sigmoid")
