@@ -189,7 +189,7 @@ class Model:
 		data = np.load(filename, allow_pickle=False)
 
 		layers = data["layers"].tolist()
-		actiavation = data["activation"].item()
+		activation = data["activation"].item()
 		output_activation = data["output_activation"].item()
 		loss = data["loss"].item()
 		weights_initializer = data["weights_initializer"].item()
@@ -198,7 +198,7 @@ class Model:
 		model = Model(
 			hidden_layer_sizes=layers[1:-1],
 			output_layer_size=layers[-1],
-			activation=actiavation,
+			activation=activation,
 			output_activation=output_activation,
 			loss=loss,
 			weights_initializer=weights_initializer
@@ -206,7 +206,7 @@ class Model:
 
 		config = NetworkConfig(
 			layers=layers,
-			activation=actiavation,
+			activation=activation,
 			output_activation=output_activation,
 			loss=loss,
 			weights_initializer=weights_initializer

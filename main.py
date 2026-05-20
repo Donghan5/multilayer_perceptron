@@ -66,7 +66,7 @@ def main():
 		df_val = pd.read_csv(args.val_data, header=None)
 	except FileNotFoundError as e:
 		print(f"File not found: {e}")
-		print("Run 'python split_data.py' to split the dataset into train and validation sets.")
+		print("Run 'python split.py' to split the dataset into train and validation sets.")
 		return
 
 	X_train = df_train.iloc[:, 2:].values
