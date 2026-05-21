@@ -1,13 +1,12 @@
 import numpy as np
 import copy
-import pandas as pd
 from network import Network, NetworkConfig
 from optimizer import Sgd, Adam
 
 class Model:
 	def __init__(
 		self,
-		hidden_layer_sizes=[24, 24, 24],
+		hidden_layer_sizes=None,
 		output_layer_size=2,
 		activation="relu",
 		output_activation="softmax",
@@ -20,6 +19,8 @@ class Model:
 		early_stopping_rounds=10,
 		min_delta=1e-4
 	):
+		if hidden_layer_sizes is None:
+			hidden_layer_sizes = [24, 24, 24]
 		self.hidden_layer_sizes = hidden_layer_sizes
 		self.output_layer_size = output_layer_size
 		self.activation = activation
@@ -98,6 +99,7 @@ class Model:
 		patience = 0
 		best_weights = None
 		best_biases = None
+		stopped_early = False
 
 		for epoch in range(self.epochs):
 			indices = np.arange(n_samples)
@@ -159,8 +161,14 @@ class Model:
 					print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f})")
 					self.network.weights = best_weights
 					self.network.biases = best_biases
+					stopped_early = True
 					break
 			print(log_msg)
+
+		if x_val is not None and y_val is not None and best_weights is not None and not stopped_early:
+			self.network.weights = best_weights
+			self.network.biases = best_biases
+			print(f"\nRestoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f})")
 
 		return history
 
@@ -170,6 +178,10 @@ class Model:
 			return None
 		# Standardize input using training mean and std
 		X = np.asarray(X)
+
+		# Handle single sample input (1D array) by reshaping it to 2D
+		if X.ndim == 1:
+			X = X.reshape(1, -1)
 		X = (X - self.mean_train) / self.std_train
 		return self.network.forward(X)
 
@@ -195,7 +207,7 @@ class Model:
 		np.savez(filename, **payload)
 		print(f"Model saved to {filename}")
 
-	@staticmethod
+	@classmethod
 	def load(filename="model.npz"):
 		data = np.load(filename, allow_pickle=False)
 
