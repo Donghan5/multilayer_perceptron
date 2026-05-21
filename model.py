@@ -208,7 +208,7 @@ class Model:
 		print(f"Model saved to {filename}")
 
 	@classmethod
-	def load(filename="model.npz"):
+	def load(cls, filename="model.npz"):
 		data = np.load(filename, allow_pickle=False)
 
 		layers = data["layers"].tolist()
@@ -218,7 +218,7 @@ class Model:
 		weights_initializer = data["weights_initializer"].item()
 
 
-		model = Model(
+		model = cls(
 			hidden_layer_sizes=layers[1:-1],
 			output_layer_size=layers[-1],
 			activation=activation,
