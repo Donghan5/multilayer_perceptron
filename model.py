@@ -94,6 +94,7 @@ class Model:
 		
 		# variable init to early stopping
 		best_loss = float('inf')
+		best_epoch = 0
 		patience = 0
 		best_weights = None
 		best_biases = None
@@ -132,8 +133,6 @@ class Model:
 
 				history['val_loss'].append(val_loss)
 				history['val_accuracy'].append(val_accuracy)
-				log_msg += f" - val_loss: {val_loss:.6f} - val_accuracy: {val_accuracy:.6f}"
-				log_msg += f" - best_loss: {best_loss:.6f} - patience: {patience}/{early_stopping_rounds}"
 
 				if val_loss < best_loss - self.min_delta:
 					best_loss = val_loss
@@ -143,12 +142,24 @@ class Model:
 					best_biases = copy.deepcopy(self.network.biases)
 				else:
 					patience += 1
-					if patience >= early_stopping_rounds:
-						print(f"\nEarly stopping at epoch {epoch + 1}")
-						print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f}) - patience: {patience}/{early_stopping_rounds}")
-						self.network.weights = best_weights
-						self.network.biases = best_biases
-						break
+
+				log_msg += (
+					f" - val_loss: {val_loss:.6f}"
+					f" - val_accuracy: {val_accuracy:.6f}"
+					f" - best_loss: {best_loss:.6f}"
+					f" - patience: {patience}/{early_stopping_rounds}"
+				)
+
+				if patience >= early_stopping_rounds:
+					if best_weights is None or best_biases is None:
+						raise RuntimeError("Early stopping triggered before any valid best weights were saved.")
+
+					print(log_msg)
+					print(f"\nEarly stopping at epoch {epoch + 1}")
+					print(f"Restoring best weights from epoch {best_epoch} (Loss: {best_loss:.6f})")
+					self.network.weights = best_weights
+					self.network.biases = best_biases
+					break
 			print(log_msg)
 
 		return history
