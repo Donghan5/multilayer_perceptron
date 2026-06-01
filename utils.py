@@ -69,7 +69,10 @@ def one_hot_encode(y: np.ndarray) -> np.ndarray:
 
 def validate_dataset(df, name="dataset"):
 	"""
-		Validate the dataset for missing values and correct label encoding
+		Validate the dataset format:
+		- Must have 32 columns
+		- The second column must contain only 'B' or 'M' labels (case-insensitive, with optional whitespace)
+		- The remaining columns must be numeric
 	"""
 
 	if df.shape[1] != 32:
