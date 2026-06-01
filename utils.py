@@ -66,3 +66,26 @@ def one_hot_encode(y: np.ndarray) -> np.ndarray:
 		else:
 			raise ValueError(f"Invalid label at index {i}: {label!r}. Expected 'B' or 'M'.")
 	return encoded
+
+def validate_dataset(df, name="dataset"):
+	"""
+		Validate the dataset for missing values and correct label encoding
+	"""
+
+	if df.shape[1] != 32:
+		raise ValueError(
+			f"{name}: expected 32 columns got {df.shape[1]}"
+		)
+	
+	labels = df.iloc[:, 1].astype(str).str.strip()
+	invalid = labels[~labels.isin(['B', 'M'])]
+
+	if not invalid.empty:
+		raise ValueError(
+			f"{name}: invalid labels found at indices {invalid.index.tolist()}: {invalid.unique().tolist()}"
+		)
+	
+	try:
+		df.iloc[:, 2:].astype(float)
+	except ValueError as e:
+		raise ValueError(f"{name}: non-numeric values found in feature columns") from e
