@@ -48,6 +48,19 @@ def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 	y_pred_clipped = np.clip(y_pred, epsilon, 1 - epsilon)
 	return -np.sum(y_true * np.log(y_pred_clipped)) / y_true.shape[0]
 
+def binary_cross_entropy(y_true: np.ndarray, y_pred_positive: np.ndarray) -> float:
+	"""
+	Compute the binary cross entropy loss
+	y_true: true labels (one-hot encoded)
+	y_pred_positive: predicted probabilities for the positive class (second column of softmax output)
+	"""
+	epsilon = 1e-15
+	y_pred_positive = np.clip(y_pred_positive, epsilon, 1 - epsilon)
+	return -np.mean(
+		y_true * np.log(y_pred_positive)
+		+ (1 - y_true) * np.log(1 - y_pred_positive)
+	)
+
 def one_hot_encode(y: np.ndarray) -> np.ndarray:
 	"""
 		One-hot encode the target labels

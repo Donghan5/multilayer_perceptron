@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from model import Model
-from utils import cross_entropy, one_hot_encode, validate_dataset
+from utils import binary_cross_entropy, one_hot_encode, validate_dataset
 
 def predict(data_path, model_path):
     try:
@@ -32,7 +32,8 @@ def predict(data_path, model_path):
     y_true_one_hot = one_hot_encode(y_raw)
     y_true = np.argmax(y_true_one_hot, axis=1)
 
-    loss = cross_entropy(y_true_one_hot, probabilities)
+    p_malignant = probabilities[:, 1]
+    loss = binary_cross_entropy(y_true, p_malignant)
     accuracy = np.mean(predictions == y_true)
 
     print(f"Loss: {loss:.4f}")
