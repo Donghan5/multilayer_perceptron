@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 import model
-from utils import one_hot_encode
+from utils import one_hot_encode, validate_dataset
 
 
 def get_args():
@@ -69,9 +69,12 @@ def main():
 		print("Run 'python split.py' to split the dataset into train and validation sets.")
 		return
 
-	X_train = df_train.iloc[:, 2:].values
+	validate_dataset(df_train, name="Training dataset")
+	validate_dataset(df_val, name="Validation dataset")
+
+	X_train = df_train.iloc[:, 2:].values.astype(float)
 	y_train = df_train.iloc[:, 1].values
-	X_val = df_val.iloc[:, 2:].values
+	X_val = df_val.iloc[:, 2:].values.astype(float)
 	y_val = df_val.iloc[:, 1].values
 
 	y_train = one_hot_encode(y_train)

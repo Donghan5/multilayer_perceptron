@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from model import Model
-from utils import cross_entropy, one_hot_encode
+from utils import cross_entropy, one_hot_encode, validate_dataset
 
 def predict(data_path, model_path):
     try:
@@ -16,13 +16,15 @@ def predict(data_path, model_path):
 
     try:
         df = pd.read_csv(data_path, header=None)
+        validate_dataset(df, name="Input dataset")
 
+        X = df.iloc[:, 2:].values.astype(float)
         y_raw = df.iloc[:, 1].values
-        X = df.iloc[:, 2:].values
 
     except Exception as e:
         print(f"Error loading or processing data: {e}")
         return
+
 
     probabilities = mlp.predict(X)
     predictions = np.argmax(probabilities, axis=1)
