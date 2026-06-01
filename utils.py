@@ -51,11 +51,18 @@ def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def one_hot_encode(y: np.ndarray) -> np.ndarray:
 	"""
 		One-hot encode the target labels
+		- 'M' (malignant) is encoded as [0, 1]
+		- 'B' (benign) is encoded as [1, 0]
 	"""
-	encoded = np.zeros((len(y), 2))
+	encoded = np.zeros((len(y), 2), dtype=np.float64)
 	for i, label in enumerate(y):
-		if label == 'M':
-			encoded[i] = [0, 1]
+		if isinstance(label, str):
+			label = label.strip()
+
+		if label == 'B':
+			encoded[i] = [1.0, 0.0]
+		elif label == 'M':
+			encoded[i] = [0.0, 1.0]
 		else:
-			encoded[i] = [1, 0]
+			raise ValueError(f"Invalid label at index {i}: {label!r}. Expected 'B' or 'M'.")
 	return encoded
