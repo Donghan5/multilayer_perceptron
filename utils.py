@@ -112,7 +112,8 @@ def validate_dataset(df, name="dataset"):
 	
 	try:
 		features = df.iloc[:, 2:].astype(float)
-		if not np.isfinite(features.values).all():
-			raise ValueError(f"{name}: feature columns contain NaN or infinite values")
 	except ValueError as e:
 		raise ValueError(f"{name}: non-numeric values found in feature columns") from e
+	
+	if not np.isfinite(features.values).all():
+		raise ValueError(f"{name}: feature columns contain NaN or infinite values")
