@@ -57,7 +57,7 @@ def binary_cross_entropy(y_true: np.ndarray, y_pred_positive: np.ndarray) -> flo
 	epsilon = 1e-15
 	y_true = np.asarray(y_true, dtype=float)
 	y_pred_positive = np.asarray(y_pred_positive, dtype=float)
-	
+
 	if y_true.shape != y_pred_positive.shape:
 		raise ValueError(
 			f"Shape mismatch: y_true shape: y_true {y_true.shape}, "
@@ -93,7 +93,7 @@ def validate_dataset(df, name="dataset"):
 	"""
 		Validate the dataset format:
 		- Must have 32 columns
-		- The second column must contain only 'B' or 'M' labels (case-insensitive, with optional whitespace)
+		- The second column must contain only 'B' or 'M' labels, with optional whitespace
 		- The remaining columns must be numeric
 	"""
 
@@ -111,6 +111,8 @@ def validate_dataset(df, name="dataset"):
 		)
 	
 	try:
-		df.iloc[:, 2:].astype(float)
+		features = df.iloc[:, 2:].astype(float)
+		if not np.isfinite(features.values).all():
+			raise ValueError(f"{name}: feature columns contain NaN or infinite values")
 	except ValueError as e:
 		raise ValueError(f"{name}: non-numeric values found in feature columns") from e
