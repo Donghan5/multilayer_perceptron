@@ -51,4 +51,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     results = predict(args.data, args.model)
-    print(results)
+    if results is not None:
+        print(results)
