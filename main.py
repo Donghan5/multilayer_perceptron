@@ -60,6 +60,8 @@ def main():
 	if args.seed is not None:
 		np.random.seed(args.seed)
 		
+	if len(args.layers) < 2:
+		raise ValueError("At least two hidden layers are required.")
 	# Load train and validate data
 	try:
 		df_train = pd.read_csv(args.data, header=None)
