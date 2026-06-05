@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from model import Model
-from utils import binary_cross_entropy, one_hot_encode, validate_dataset
+from utils import binary_cross_entropy, classification_metrics, one_hot_encode, validate_dataset
 
 def predict(data_path, model_path):
     try:
@@ -38,6 +38,17 @@ def predict(data_path, model_path):
 
     print(f"Loss: {loss:.4f}")
     print(f"Accuracy: {accuracy:.4f}")
+
+    metrics = classification_metrics(y_true, predictions, positive_class=1)
+    print(f"Precision(M): {metrics['precision']:.4f}")
+    print(f"Recall(M): {metrics['recall']:.4f}")
+    print(f"F1(M): {metrics['f1']:.4f}")
+    print(f"Specificity(B): {metrics['specificity']:.4f}")
+    print(
+        "Confusion Matrix:\n"
+        f"TP: {metrics['tp']}  FP: {metrics['fp']}\n"
+        f"FN: {metrics['fn']}  TN: {metrics['tn']}"
+    )
 
     labels = ["B", "M"]
     decoded_predictions = [labels[p] for p in predictions]
