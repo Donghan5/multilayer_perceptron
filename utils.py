@@ -117,3 +117,46 @@ def validate_dataset(df, name="dataset"):
 	
 	if not np.isfinite(features.values).all():
 		raise ValueError(f"{name}: feature columns contain NaN or infinite values")
+	
+
+def classification_metrics(
+		y_true: np.ndarray,
+		y_pred: np.ndarray,
+		positive_class: int = 1
+) -> dict:
+	"""
+		Compute classification metrics: accuracy, precision, recall and F1-score
+	"""
+
+	y_true = np.asarray(y_true)
+	y_pred = np.asarray(y_pred)
+
+	if y_true.shape != y_pred.shape:
+		raise ValueError(f"Shape mismatch: y_true shape: {y_true.shape}, y_pred shape: {y_pred.shape}")
+	
+	pos = positive_class
+	neg = 1 - positive_class
+
+	tp = np.sum((y_true == pos) & (y_pred == pos))
+	tn = np.sum((y_true == neg) & (y_pred == neg))
+	fp = np.sum((y_true == neg) & (y_pred == pos))
+	fn = np.sum((y_true == pos) & (y_pred == neg))
+
+	precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+	recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+	f1 = (
+		2 * precision * recall / (precision + recall)
+		if (precision + recall) > 0 else 0.0
+	)
+	specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+	return {
+		"tp": tp,
+		"tn": tn,
+		"fp": fp,
+		"fn": fn,
+		"precision": precision,
+		"recall": recall,
+		"f1": f1,
+		"specificity": specificity
+	}
