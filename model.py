@@ -204,7 +204,8 @@ class Model:
 			payload[f"W{i}"] = W
 			payload[f"b{i}"] = b
 
-		np.savez(filename, **payload)
+		with open(filename, 'wb') as f:
+			np.savez(f, **payload)
 		print(f"Model saved to {filename}")
 
 	@classmethod
