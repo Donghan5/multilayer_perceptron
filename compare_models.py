@@ -151,23 +151,18 @@ def make_json_serializable(history: dict[str, list]) -> dict[str, list]:
 
 def save_histories(history_adam: dict[str, list], history_sgd: dict[str, list]) -> None:
     """
-    Saves the training histories for both Adam and SGD optimizers to CSV files
+    Saves the training histories for both Adam and SGD optimizers to json files
     """
-    try:
-        with open("optimizer_histories.json", "w") as f:
-            if f is None:
-                raise FileNotFoundError("Could not open optimizer_histories.json for writing.")
-            json.dump(
-                {
-                    "adam": make_json_serializable(history_adam), 
-                    "sgd": make_json_serializable(history_sgd)
-                }, 
-                f,
-                indent=2
-            )
-        print("Optimizer histories saved to optimizer_histories.json")
-    except Exception as e:
-        print(f"Error occurred while saving optimizer histories: {e}")
+    with open("optimizer_histories.json", "w") as f:
+        json.dump(
+            {
+                "adam": make_json_serializable(history_adam), 
+                "sgd": make_json_serializable(history_sgd)
+            }, 
+            f,
+            indent=2
+        )
+    print("Optimizer histories saved to optimizer_histories.json")
 
 
 def main():
