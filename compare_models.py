@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from model import Model
-from optimizer import Adam, Sgd
 from utils import one_hot_encode, validate_dataset
+import json
 
 def import_csvs() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -90,7 +90,7 @@ def train_model_with_sgd(
     """
     mlp_sgd = Model(
         hidden_layer_sizes=[24, 24, 24],
-        learning_rate=0.01,
+        learning_rate=0.001,
         epochs=50,
         batch_size=32,
         solver="sgd",
@@ -105,38 +105,32 @@ def train_model_with_sgd(
 def plot_comparison_curves(history_adam: dict[str, list], history_sgd: dict[str, list]) -> None:
     """
     Plots the validation loss and accuracy curves for both Adam and SGD optimizers
-    Showing the learning curves side by side for easy comparison
     """
 
-    epochs_adam = range(1, len(history_adam['loss']) + 1)
-    epochs_sgd = range(1, len(history_sgd['loss']) + 1)
+    # Create epoch ranges for plotting
+    adam_loss_epochs = range(1, len(history_adam["val_loss"]) + 1)
+    sgd_loss_epochs = range(1, len(history_sgd["val_loss"]) + 1)
+
+    adam_acc_epochs = range(1, len(history_adam["val_accuracy"]) + 1)
+    sgd_acc_epochs = range(1, len(history_sgd["val_accuracy"]) + 1)
                        
     plt.figure(figsize=(12, 5))
 
-    plt.subplot(1, 3, 1)
-    plt.plot(epochs_adam, history_adam['val_loss'], label='Adam Validation Loss')
-    plt.plot(epochs_sgd, history_sgd['val_loss'], label='SGD Validation Loss')
+    plt.subplot(1, 2, 1)
+    plt.plot(adam_loss_epochs, history_adam['val_loss'], label='Adam Validation Loss')
+    plt.plot(sgd_loss_epochs, history_sgd['val_loss'], label='SGD Validation Loss')
     plt.title('Validation Loss Comparison')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
 
-    plt.subplot(1, 3, 2)
-    plt.plot(epochs_adam, history_adam['val_accuracy'], label='Adam Validation Accuracy')
-    plt.plot(epochs_sgd, history_sgd['val_accuracy'], label='SGD Validation Accuracy')
+    plt.subplot(1, 2, 2)
+    plt.plot(adam_acc_epochs, history_adam['val_accuracy'], label='Adam Validation Accuracy')
+    plt.plot(sgd_acc_epochs, history_sgd['val_accuracy'], label='SGD Validation Accuracy')
     plt.title('Validation Accuracy Comparison')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
-    plt.legend()
-    plt.grid(True)
-
-    plt.subplot(1, 3, 3)
-    plt.plot(epochs_adam, history_adam['learning_rate'], label='Adam Learning Rate')
-    plt.plot(epochs_sgd, history_sgd['learning_rate'], label='SGD Learning Rate')
-    plt.title('Learning Rate Comparison')
-    plt.xlabel('Epochs')
-    plt.ylabel('Learning Rate')
     plt.legend()
     plt.grid(True)
 
@@ -144,17 +138,52 @@ def plot_comparison_curves(history_adam: dict[str, list], history_sgd: dict[str,
     plt.savefig('optimizer_comparison.png')
     print("Comparison curves saved to optimizer_comparison.png")
 
+    plt.close()
+
+def make_json_serializable(history: dict[str, list]) -> dict[str, list]:
+    """
+    Converts the training history to a JSON-serializable format
+    """
+    return {
+        key: [float(value) for value in values] 
+        for key, values in history.items()
+    }
+
+def save_histories(history_adam: dict[str, list], history_sgd: dict[str, list]) -> None:
+    """
+    Saves the training histories for both Adam and SGD optimizers to CSV files
+    """
+    try:
+        with open("optimizer_histories.json", "w") as f:
+            if f is None:
+                raise FileNotFoundError("Could not open optimizer_histories.json for writing.")
+            json.dump(
+                {
+                    "adam": make_json_serializable(history_adam), 
+                    "sgd": make_json_serializable(history_sgd)
+                }, 
+                f,
+                indent=2
+            )
+        print("Optimizer histories saved to optimizer_histories.json")
+    except Exception as e:
+        print(f"Error occurred while saving optimizer histories: {e}")
+
+
 def main():
     df_train, df_val = import_csvs()
     if df_train is None or df_val is None:
         raise FileNotFoundError("Required CSV files not found. Please run 'python split.py' to create train.csv and validation.csv.")
-        return
 
     X_train, y_train, X_val, y_val = validate_and_extract(df_train, df_val)
 
     np.random.seed(42)  # Set a fixed random seed for reproducibility
     history_adam = train_model_with_adam(X_train, y_train, X_val, y_val)
+
+    np.random.seed(42)  # Reset the random seed to ensure fair comparison
     history_sgd = train_model_with_sgd(X_train, y_train, X_val, y_val)
+
+    save_histories(history_adam, history_sgd)
 
     plot_comparison_curves(history_adam, history_sgd)
 
