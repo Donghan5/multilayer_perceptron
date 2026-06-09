@@ -7,6 +7,9 @@ from utils import one_hot_encode, validate_dataset
 
 
 def get_args():
+	"""
+	Parses command-line arguments for training the MLP model.
+	"""
 	parser = argparse.ArgumentParser(description="Train the MLP model.")
 	parser.add_argument("--data", type=str, default="train.csv", help="Path to the training data CSV file.")
 	parser.add_argument("--val_data", type=str, default="validation.csv", help="Path to the validation data CSV file.")
@@ -24,6 +27,9 @@ def get_args():
 
 
 def plot_learning_curve(history):
+	"""
+	Plots the learning curve for training and validation loss and accuracy.
+	"""
 	epochs = range(1, len(history['loss']) + 1)
 
 	plt.figure(figsize=(12, 5))
