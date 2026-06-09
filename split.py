@@ -23,6 +23,11 @@ def split_config(config: SplitConfig) -> None:
 
 	if config.seed != -1:
 		random.seed(config.seed)
+	
+	# Protection of ratio value
+	if not 0 < config.ratio < 1:
+		raise ValueError("Ratio must be between 0 and 1 (exclusive).")
+	
 	with open(config.dataset, "r") as file:
 		lines = [line.strip() for line in file if line.strip()]
 	random.shuffle(lines)
@@ -36,10 +41,6 @@ def split_config(config: SplitConfig) -> None:
 
 if __name__ == "__main__":
 	config = get_args()
-
-	# Protection of ratio value
-	if not 0 < config.ratio < 1:
-		raise ValueError("Ratio must be between 0 and 1 (exclusive).")
 
 	split_config(config)
 	print(f"Split complete: train.csv ({config.ratio * 100:.0f}%) and validation.csv ({(1 - config.ratio) * 100:.0f}%)")
