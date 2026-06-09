@@ -22,7 +22,7 @@ from model import Model
 from utils import one_hot_encode, validate_dataset
 import json
 
-def import_csvs() -> tuple[pd.DataFrame, pd.DataFrame]:
+def import_csvs():
     """
     Loads the training and validation datasets from CSV files
     """
@@ -68,7 +68,7 @@ def train_model_with_adam(
     mlp_adam = Model(
         hidden_layer_sizes=[24, 24, 24],
         learning_rate=0.001,
-        epochs=50,
+        epochs=100,
         batch_size=32,
         solver="adam",
         early_stopping_rounds=5,
@@ -91,7 +91,7 @@ def train_model_with_sgd(
     mlp_sgd = Model(
         hidden_layer_sizes=[24, 24, 24],
         learning_rate=0.001,
-        epochs=50,
+        epochs=200,
         batch_size=32,
         solver="sgd",
         early_stopping_rounds=5,

@@ -9,3 +9,6 @@ memory
 .claude
 train.csv
 validation.csv
+
+optimizer_histories.json
+optimizer_comparison.png
