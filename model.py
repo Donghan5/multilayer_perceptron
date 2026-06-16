@@ -93,7 +93,7 @@ class Model:
 		if x_val is not None:
 			x_val = (x_val - self.mean_train) / self.std_train
 		
-		# variable init to early stopping
+		# variable init to early stopping (for bonus part)
 		best_loss = float('inf')
 		best_epoch = 0
 		patience = 0
