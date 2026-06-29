@@ -1,14 +1,8 @@
 .venv
 __pycache__
-model.pkl
 model.npz
 learning_curve.png
-.omc
-memory
-.pytest_cache
-.claude
 train.csv
 validation.csv
-
 optimizer_histories.json
 optimizer_comparison.png
