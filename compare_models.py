@@ -66,10 +66,10 @@ def train_model_with_adam(
     Trains the MLP model using the Adam optimizer and returns the training history
     """
     mlp_adam = Model(
-        hidden_layer_sizes=[24, 24, 24],
+        hidden_layer_sizes=[32, 32, 16],
         learning_rate=0.001,
-        epochs=100,
-        batch_size=32,
+        epochs=700,
+        batch_size=8,
         solver="adam",
         early_stopping_rounds=5,
         min_delta=0.001
@@ -89,13 +89,13 @@ def train_model_with_sgd(
     Trains the MLP model using the SGD optimizer and returns the training history
     """
     mlp_sgd = Model(
-        hidden_layer_sizes=[24, 24, 24],
-        learning_rate=0.001,
-        epochs=200,
-        batch_size=32,
+        hidden_layer_sizes=[32, 32, 16],
+        learning_rate=0.01,
+        epochs=1000,
+        batch_size=8,
         solver="sgd",
-        early_stopping_rounds=5,
-        min_delta=0.001
+        early_stopping_rounds=20,
+        min_delta=1e-5
     )
 
     history_sgd = mlp_sgd.fit(X_train, y_train, x_val=X_val, y_val=y_val)
